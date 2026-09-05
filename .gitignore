@@ -1,0 +1,7 @@
+.DS_Store
+
+# Google Sites pointers and raw exports belong outside this public repository.
+*.gsite
+/takeout*.zip
+/takeout*/
+/private-archives/
