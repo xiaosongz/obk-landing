@@ -4,16 +4,16 @@ Obelisk website and investor portal prototype, alongside the original marketing 
 
 ## Overview
 
-The new investor experience lives in `prototype/`: React + TypeScript + Vite, Ant Design components, React Router, and ECharts. The Google Site supplies content and reporting intent only; its markup, layout system, and technology are not the foundation for the new application.
+The new website lives in `prototype/`: React + TypeScript + Vite, Ant Design components, and React Router. It preserves the partner’s homepage, portfolio showcase, investor entry/home, fund portfolio, and property reporting structure. The Google Site supplies content and reporting intent only; its markup, layout system, and technology are not the foundation for the new application.
 
 ## Current status — September 5, 2026
 
 - The root `index.html` remains the initial static marketing page, with placeholder dashboard links. The new React prototype is a separate application in `prototype/`.
-- The prototype includes investor overview, period selection, a searchable/sortable/filterable property table, property-detail drawers, sample reports, CSV export, and missing/unavailable-data states. All financial figures and properties are fictional; there is no authentication or database integration yet.
+- The corrected prototype includes all six top-level source pages, the full 37-photo portfolio showcase, the original six-step illustrated business process, every investor account-field group, the five fund stages, and full property-report pages. Investor capital amounts are illustrative; property financial fields remain unfilled. There is no authentication or database integration yet.
 - The existing Google Sites portal is a separate template. Its screenshot tables are placeholders for actual database-backed tables, as confirmed by the project owner; they are not authoritative financial data or the intended final rendering.
 - A full-site, unpublished export copy was created in the work account's My Drive, in `Obelisk Site Export 2026-09-05`. The original site remains in its Shared Drive. The copy has a distinct document ID.
-- The full Takeout ZIP has **not** been requested or downloaded. The local source-assets ZIP contains eight illustrations and the `.gsite` pointer, not a complete website export. No Google Sites pages have been imported into this repository.
-- [docs/design-direction.md](docs/design-direction.md) records the design direction and production integration boundaries. The investor prototype is ready for local design review; the public website redesign remains future work.
+- The full Takeout ZIP has **not** been requested or downloaded. Seven reference pages and their assets were subsequently saved through Chrome outside the repository. Curated text and imagery are used in the React app; raw Google Sites pages and private investor details are excluded. The earlier source-assets ZIP remains a partial package, not a complete website archive.
+- [docs/design-direction.md](docs/design-direction.md) records the corrected page coverage, design direction, and production boundaries. The complete source-aligned prototype is ready for local design review.
 
 This GitHub repository is public. Keep raw exports, investor details, private documents, screenshots containing private data, and database extracts outside it. The current Pages workflow uploads the repository root; `.gitignore` is not an access-control mechanism.
 
@@ -56,7 +56,7 @@ npm ci
 npm run dev
 ```
 
-Open [the local prototype](http://127.0.0.1:8765/). See [prototype/README.md](prototype/README.md) for its structure, review flow, and production boundaries. To view the original static landing page, open the root `index.html` directly.
+Open [the local prototype](http://127.0.0.1:8766/). See [prototype/README.md](prototype/README.md) for its structure, review flow, and production boundaries. To view the original static landing page, open the root `index.html` directly.
 
 ## Configuration
 

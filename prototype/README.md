@@ -1,36 +1,47 @@
-# Obelisk investor portal prototype
+# Obelisk website prototype
 
-The Google Site is a nontechnical content reference. This application uses React, TypeScript, Vite, Ant Design, React Router, and ECharts. It does not import Google Sites markup or use screenshots as tables.
+The partner’s Google Site is the source for page structure, content, photography, and illustrations. This application implements that experience with React, TypeScript, Vite, Ant Design, and React Router. It imports no Google Sites markup, JavaScript, or layout machinery.
 
-## Run locally
+## Local review
 
 ```sh
 npm ci
 npm run dev
 ```
 
-Open http://127.0.0.1:8765/. The development server binds to loopback only. `npm run build` type-checks and produces `dist/`; `npm run preview` serves that build on the same port after stopping the development server. `npm run format` applies consistent source formatting with Prettier.
+Open [http://127.0.0.1:8766/](http://127.0.0.1:8766/). The server binds only to loopback. Port 8765 was occupied by a separate local service, so this revision uses 8766.
 
-## Review
+- `npm run build`: TypeScript check and production build into `dist/`.
+- `npm run preview`: serve the build on the same port after stopping development.
+- `npm run format`: apply consistent Prettier formatting.
 
-- Overview: switch between Q1 and Q2, inspect the capital summary and distribution chart, and open a quarterly update.
-- Fund portfolio: search, sort, filter stages, open a property's detail drawer, or export the sample CSV. Export includes the entire selected-period sample dataset, regardless of table filters.
-- Documents: open sample reading views and the definitions guide.
-- Use the prototype control at the bottom to see the unavailable-data state and retry. Maple House demonstrates missing NOI; missing does not mean zero.
+## Source structure preserved
 
-All properties, amounts, statuses, and commentary are fictional. The fixture periods demonstrate presentation changes, not an actual performance history. NOI is a partial subtotal covering seven of eight properties. Income distributions exclude returned capital. The sample remaining-capital calculation is not a valuation.
+| Page | Route | Included content |
+|---|---|---|
+| Home | `#/` | Affordable-housing platform introduction, Acquire/Improve/Operate strategy, eight source photographs, portfolio/investor links, featured-video slot, original disclosure |
+| Portfolio | `#/portfolio` | Original portfolio introduction and all 37 showcase photographs, with a working image viewer |
+| Investor Login | `#/investor-login` | Investor entry page and an explicitly labeled demo entry; no credential collection |
+| Investor Home | `#/investor-home` | Investor-relations contact, both fund links, all subscription/capital/preferred-return/promote field groups, legal-document placeholder, original process overview and six illustrated process sections |
+| Fund III Portfolio | `#/fund-iii-portfolio` | All six summary measures, Buy/Rehab/Rent/Refinance/Repeat stages, searchable acquisition directory, stabilized and stabilizing reporting layouts, manager-note areas |
+| Property Performance | `#/property-performance` | Source current/sold property gallery and routes to property details |
+| Property detail | `#/property-performance/2-4401-avenue-i` | Source property photo, performance-at-a-glance fields, asset overview, lease, T-12 and cumulative financial layouts, calculation rules, original map |
 
-## Source
+The full business-process copy is retained in expandable reading sections. Illustrations can be opened at full size. The first property’s detailed-page photograph takes precedence over the directory’s generic placeholder photograph.
 
-- `src/App.tsx`: routes and page composition using Ant Design tables, menus, controls, drawers, and modals.
-- `src/data.ts`: typed synthetic fixtures, formatting, and sample CSV export.
-- `src/DistributionChart.tsx`: ECharts lifecycle and distribution chart.
-- `src/main.tsx` and `src/styles.css`: shared theme and responsive layout.
+## Content and data boundaries
 
-## Production boundary
+- Curated business copy and images are in `src/reference-content.ts` and `public/images/`. Seven reference pages were saved through the authenticated browser outside this public repository; they include six top-level pages and the one linked property-detail template. This is not a complete Takeout archive.
+- The portfolio showcase has 37 photographs. The separate property-performance directory has 36 current-image entries and one sold-image entry. These are source-page counts, not verified fund metrics.
+- Only four current entries have source addresses. Other captions remain generic and do not imply database IDs. Operating stage, lease, financial values, and reporting dates are not inferred from photographs.
+- The investor account uses a fictional identity and illustrative capital amounts. Preferred-return/promote values and property financial cells remain unfilled. No personal investor record, tenant record, legal agreement, or screenshot financial table is imported.
+- The source login page was blank. The featured-video slot and subscription-agreement link had no supplied content. These omissions are labeled rather than filled with invented material.
+- Production must use authenticated server-side investor/fund authorization and the existing cockpit’s approved financial read models. Source narrative definitions need reconciliation with those models before displaying calculated results.
 
-The UI is ready for design review, not production investor access. Next, map the approved fields to the existing cockpit FastAPI/read models, add server-enforced investor and fund authorization, and replace the fixtures with a typed API data layer. Financial calculations and document entitlements must remain authoritative on the server. Verify investor capital-account coverage before promising integration.
+## Maintenance
 
-There is no backend, login, persistent storage, or real investor document in this prototype. The existing root GitHub Pages workflow does not build this application; deployment must be chosen deliberately after review. Google Sites export completeness is separate from the new application's technical architecture.
+`App.tsx` owns navigation and page routes. `PublicPages.tsx`, `InvestorHome.tsx`, `FundPortfolio.tsx`, and `PropertyPages.tsx` own their respective page content. `site-data.ts` contains typed source-directory metadata and the explicitly fictional account fixture. Shared theme and responsive layout live in `main.tsx` and `styles.css`.
 
-Validation: TypeScript and the production build pass; the local Vite route responds. Chrome was launched at the local URL. Automated browser interaction and visual testing have not been performed.
+The old generic dashboard and unrelated distribution chart have been removed. The root repository’s original static page and Pages workflow remain separate; the workflow does not build this prototype. No changes have been pushed or deployed.
+
+Validation: TypeScript and production build pass. Browser checks covered all six navigation destinations, the 37-image viewer, expanded process copy, fund-directory search, property-report sections, and the loaded map. The final homepage reload reported no new browser errors. All 46 deduplicated image files and source-content coverage checks passed. Mobile styles are implemented but have not been independently browser-tested.

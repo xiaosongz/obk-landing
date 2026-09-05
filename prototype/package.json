@@ -4,10 +4,10 @@
   "version": "0.1.0",
   "type": "module",
   "scripts": {
-    "dev": "vite --host 127.0.0.1 --port 8765 --strictPort",
+    "dev": "vite --host 127.0.0.1 --port 8766 --strictPort",
     "build": "tsc --noEmit && vite build",
     "format": "prettier --write src index.html vite.config.ts tsconfig.json package.json",
-    "preview": "vite preview --host 127.0.0.1 --port 8765 --strictPort"
+    "preview": "vite preview --host 127.0.0.1 --port 8766 --strictPort"
   },
   "dependencies": {
     "@ant-design/icons": "^6.0.0",

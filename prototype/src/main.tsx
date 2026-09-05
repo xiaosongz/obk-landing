@@ -17,7 +17,7 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
           colorBorder: "#dcdedc",
           borderRadius: 4,
           fontFamily: "Archivo, sans-serif",
-          fontSize: 15,
+          fontSize: 16,
           controlHeight: 40,
         },
         components: {
