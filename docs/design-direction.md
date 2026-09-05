@@ -2,13 +2,15 @@
 
 Date: September 5, 2026
 
-Status: Discussion draft. No redesign, database integration, or deployment is included in this checkpoint.
+Status: Investor-portal prototype implemented for local review in `prototype/`. Database integration and production deployment remain pending.
 
 ## What we are designing
 
 An Obelisk investment-firm website with a coherent investor experience. The public pages should explain the strategy, operating approach, and team. The authenticated portal should help an investor understand their capital, the fund's performance, and the properties behind it.
 
-The owner confirmed that the Google Site is a template and its tables are screenshots standing in for database-backed tables. Preserve their reporting intent; do not transcribe screenshot figures, infer formulas from images, or treat the screenshots as the eventual UI.
+The owner confirmed that the Google Site is a nontechnical partner's content template and its tables are screenshots standing in for database-backed tables. Preserve its ideas and reporting intent only. Do not carry forward Google Sites technology or structure, transcribe screenshot figures, infer formulas from images, or treat the screenshots as the eventual UI.
+
+The prototype uses React + TypeScript + Vite, Ant Design for standard interface components, React Router for navigation, and ECharts for charts. This replaces the initial hand-written HTML/JavaScript prototype approach. Typed fictional fixtures are separate from page composition so the reviewed UI can later consume the existing authenticated API and canonical financial read models.
 
 The page observations below come from the Investor Home published page and Fund III Portfolio editor inspected during this session. A full page/assets export is still pending, so this is not a complete site audit. See the [current status](../README.md#current-status--september-5-2026).
 
@@ -85,9 +87,9 @@ The screenshots are a starting point for information requirements. Replace them 
 
 The adjacent cockpit's current `docs/ARCHITECTURE.md` identifies FastAPI + React and canonical financial read models. Reuse applicable presentation components and server-side metrics there. Investor capital-account fields and investor-specific entitlements have not been verified; database availability must be checked before promising those integrations. Do not introduce a second financial-calculation pipeline in this landing-page repository.
 
-## Smallest useful next design step
+## Current prototype and next step
 
-Create one investor-overview preview and its linked fund-table view using clearly labeled synthetic data. Apply the proposed palette/type, revised content order, and real HTML tables. This establishes the investor experience before a site-wide rebuild or backend work.
+The local prototype provides an investor overview, linked fund table, property detail, and sample document library using clearly labeled synthetic data. It applies the proposed palette/type and revised content order using Ant Design table and dialog components. Review this experience before a site-wide rebuild or backend work.
 
 Review evidence should be visible in the browser:
 
@@ -104,4 +106,4 @@ After that review, map the chosen table fields to existing API/read models and v
 - [BREIT](https://www.breit.com/): its public navigation separates strategy, portfolio, resources, and investor login; performance figures carry a reporting date. These are useful information-architecture references, not a proposed copy of its branding, claims, or investment products.
 - [Google whole-site copy instructions](https://support.google.com/sites/answer/98081?hl=en) and [U-M Google Sites HTML export instructions](https://teamdynamix.umich.edu/TDClient/30/Portal/KB/Article/15738/Google-Download-Site-as-HTML-File): migration references, separate from the design proposal.
 
-Open design decisions: confirm whether the next review should prioritize the public homepage or the investor overview; confirm available logo/photo assets after export; verify investor capital-account data and permissions. The recommendation is to start with the investor overview because that is the working template reviewed so far.
+Open decisions after prototype review: approve or revise the investor experience; confirm available logo/photo assets; verify investor capital-account data and permissions; then scope the public homepage. No Google Sites implementation detail constrains the production stack.

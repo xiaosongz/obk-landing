@@ -1,4 +1,6 @@
 .DS_Store
+node_modules/
+/prototype/dist/
 
 # Google Sites pointers and raw exports belong outside this public repository.
 *.gsite
