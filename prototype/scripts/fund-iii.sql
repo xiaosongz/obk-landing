@@ -20,8 +20,10 @@ SELECT json_build_object(
   ), '[]'::json)
 );
 
--- Optional owner-provided read model; this is NOT an existing cockpit view.
--- Missing view means not yet reported, never zero. A malformed view fails export.
+-- Summary measures. If the owner supplies public.lp_fund_iii_summary it is
+-- authoritative. Otherwise only the two measures derivable from property
+-- status are reported (occupied = status 'Rented'); the rest stay
+-- "not yet reported", never zero.
 SELECT to_regclass('public.lp_fund_iii_summary') IS NOT NULL AS has_summary \gset
 \if :has_summary
 SELECT COALESCE(json_agg(json_build_object(
@@ -30,5 +32,24 @@ SELECT COALESCE(json_agg(json_build_object(
 FROM public.lp_fund_iii_summary
 WHERE fund_name = 'Fund III';
 \else
-SELECT 'null';
+WITH fund AS (
+  SELECT count(*) AS total,
+         count(*) FILTER (WHERE p.status = 'Rented') AS occupied
+  FROM public.properties p
+  JOIN public.funds f ON f.fund_id = p.fund_id
+  WHERE f.fund_name = 'Fund III'
+    AND p.status IS DISTINCT FROM 'Acquisition Terminated'
+    AND p.property_id < 9001
+)
+SELECT json_build_array(
+  json_build_object('asOf', current_date, 'metric', 'capital_recycling_rate', 'state', 'not_reported', 'value', NULL),
+  json_build_object('asOf', current_date, 'metric', 'occupied_homes', 'state', 'reported', 'value', occupied),
+  json_build_object('asOf', current_date, 'metric', 'occupancy', 'state',
+    CASE WHEN total > 0 THEN 'reported' ELSE 'missing' END, 'value',
+    CASE WHEN total > 0 THEN round(100.0 * occupied / total, 1) END),
+  json_build_object('asOf', current_date, 'metric', 'stabilized_homes', 'state', 'not_reported', 'value', NULL),
+  json_build_object('asOf', current_date, 'metric', 'stabilization_rate', 'state', 'not_reported', 'value', NULL),
+  json_build_object('asOf', current_date, 'metric', 'refinance_pipeline', 'state', 'not_reported', 'value', NULL)
+)
+FROM fund;
 \endif

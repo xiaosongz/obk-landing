@@ -40,24 +40,36 @@ export function makeSnapshot(
 }
 
 export async function exportFund() {
-  // A named libpq service deliberately avoids silently using a developer/GP login.
-  if (!process.env.PGSERVICE || !process.env.OBK_LP_DATA_FILE)
+  // Connection comes from a named libpq service or explicit PG* variables so a
+  // developer/GP login is never picked up silently. The password stays in the
+  // libpq password file or PGPASSWORD; it is never passed as an argument.
+  const explicitConnection =
+    process.env.PGHOST && process.env.PGUSER && process.env.PGDATABASE;
+  if ((!process.env.PGSERVICE && !explicitConnection) || !process.env.OBK_LP_DATA_FILE)
     throw new Error(
-      "Configure PGSERVICE and OBK_LP_DATA_FILE outside the repository",
+      "Configure PGSERVICE (or PGHOST, PGUSER, PGDATABASE) and OBK_LP_DATA_FILE",
     );
   const destination = resolve(process.env.OBK_LP_DATA_FILE);
   const parent = await realpath(dirname(destination));
   const repo = await realpath(
     fileURLToPath(new URL("../../", import.meta.url)),
   );
+  // Allowed destinations: anywhere outside the repository, or the gitignored
+  // prototype/public/lp-data/ directory so a demo build is self-contained.
+  const demoDirectory = await realpath(
+    fileURLToPath(new URL("../public/lp-data/", import.meta.url)),
+  ).catch(() => null);
   const within = relative(repo, parent);
-  if (
-    within === "" ||
-    (!within.startsWith(`..${sep}`) &&
-      within !== ".." &&
-      !within.startsWith(sep))
-  )
-    throw new Error("Export destination must be outside the repository");
+  const outsideRepo =
+    within.startsWith(`..${sep}`) || within === ".." || within.startsWith(sep);
+  if (!outsideRepo && parent !== demoDirectory)
+    throw new Error(
+      "Export destination must be outside the repository or in public/lp-data/",
+    );
+  // Demo escape hatch: the owner may run the export with an administrative
+  // login before a dedicated LP reader role exists. The transaction is still
+  // read-only; only the role-attribute gate is bypassed, loudly.
+  const allowAdminRole = process.env.OBK_LP_ALLOW_ADMIN_ROLE === "1";
   const sql = await readFile(new URL("fund-iii.sql", import.meta.url), "utf8");
   const roleCheck = `
 SELECT CASE WHEN EXISTS (
@@ -95,8 +107,14 @@ ROLLBACK;`;
     child.stdin.end(query);
   });
   const lines = stdout.trim().split(/\r?\n/);
-  if (lines.length !== 3 || lines[0] !== "lp-read-only")
-    throw new Error("Read-only role or query output rejected");
+  if (lines.length !== 3) throw new Error("Unexpected query output");
+  if (lines[0] !== "lp-read-only") {
+    if (!allowAdminRole)
+      throw new Error("Read-only role or query output rejected");
+    console.warn(
+      "WARNING: exporting with a privileged database role (OBK_LP_ALLOW_ADMIN_ROLE=1). Demo use only; provision a dedicated LP reader for production.",
+    );
+  }
   const snapshot = makeSnapshot(JSON.parse(lines[1]), JSON.parse(lines[2]));
   const output = resolve(parent, basename(destination));
   const temporary = `${output}.${process.pid}.tmp`;
@@ -112,7 +130,7 @@ ROLLBACK;`;
     });
   }
   console.log(
-    "Validated LP-only Fund III snapshot written outside the repository.",
+    `Validated LP-only Fund III snapshot written to ${output} (${parent === demoDirectory ? "gitignored demo directory" : "outside the repository"}).`,
   );
 }
 

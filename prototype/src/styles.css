@@ -1317,8 +1317,14 @@ figure > figcaption span:first-child {
   line-height: 1.5;
 }
 .photo-unmatched {
-  width: 70px;
+  width: 64px;
+  height: 48px;
   flex-shrink: 0;
-  font-size: 0.8rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #f0efea;
+  border: 1px solid var(--rule);
   color: var(--muted);
+  font-size: 1.1rem;
 }

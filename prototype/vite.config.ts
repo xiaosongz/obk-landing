@@ -1,6 +1,7 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
-import { readFile } from "node:fs/promises";
+import { access, readFile } from "node:fs/promises";
+import { fileURLToPath } from "node:url";
 import type { Plugin, Connect } from "vite";
 import { parseFundSnapshot } from "./src/fund-data";
 
@@ -37,8 +38,14 @@ function privateFundReport(): Plugin {
       response.end('{"error":"Method not allowed"}');
       return;
     }
-    const path = process.env.OBK_LP_DATA_FILE;
-    if (!path) {
+    // Explicit private path first; otherwise the gitignored demo export in
+    // public/lp-data/ (the same file a static build would serve).
+    const path =
+      process.env.OBK_LP_DATA_FILE ||
+      fileURLToPath(new URL("./public/lp-data/fund-iii.json", import.meta.url));
+    try {
+      await access(path);
+    } catch {
       response.statusCode = 503;
       response.end('{"error":"Report not yet supplied"}');
       return;

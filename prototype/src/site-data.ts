@@ -68,12 +68,13 @@ export const fundMetrics: {
   {
     key: "occupied_homes",
     label: "Occupied homes",
-    definition: "Count of occupied homes.",
+    definition:
+      "Homes whose recorded status in the portfolio database is Rented.",
   },
   {
     key: "occupancy",
     label: "Occupancy",
-    definition: "Occupied homes ÷ total homes × 100%.",
+    definition: "Occupied homes ÷ homes in the fund × 100%.",
   },
   {
     key: "stabilized_homes",

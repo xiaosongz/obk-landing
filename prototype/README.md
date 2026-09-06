@@ -79,34 +79,45 @@ Origin, with `Cache-Control: no-store`. The browser uses this route without
 credentials or redirects. Missing files, malformed reports, and HTML fallbacks
 are never treated as financial reports.
 
-### Owner setup — remains for the owner to fill in
+### Running the export
 
-Requires Node 22.18+ (native TypeScript stripping) and `psql` on PATH. Configure a
-private libpq service outside repositories for `memini.lan:5433`, database `obk`,
-using a dedicated LP reader and the normal private libpq password file. Role
-provisioning remains an owner/DBA step: grant CONNECT, schema USAGE, and SELECT on
-only the columns below. Column-level grants suffice. Do not use a GP/developer
-account. The role must have no write privileges, superuser, role/database creation,
-replication, or RLS bypass. The exporter checks role attributes and write privileges
-on the two source tables. All queries run in one repeatable-read, read-only
-transaction with timeouts, no psqlrc, no password prompts, and a final rollback.
-Failures preserve the previous snapshot and do not print database error details.
+Requires Node 22.18+ (native TypeScript stripping) and `psql` on PATH. The
+connection comes from a named libpq service (`PGSERVICE`) or explicit `PGHOST`,
+`PGPORT`, `PGUSER`, `PGDATABASE` variables; the password stays in the libpq
+password file or `PGPASSWORD`, sourced from a private env file, never typed inline.
+All queries run in one repeatable-read, read-only transaction with timeouts, no
+psqlrc, no password prompts, and a final rollback. Failures preserve the previous
+snapshot and do not print database error details.
 
-After configuring a private service named `obk_lp` and creating a private output
-directory, run from `prototype/`. The output path below is a placeholder:
+The exporter accepts two destinations: any path outside the repository, or the
+gitignored `public/lp-data/` directory. The second makes a demo build
+self-contained: `npm run build` copies the snapshot into `dist/`, and `npm run
+dev` / `npm run preview` serve it at `/lp-data/fund-iii.json` to loopback
+requests only. `OBK_LP_DATA_FILE` pointing elsewhere takes precedence.
 
 ```sh
-export PGSERVICE=obk_lp
-export OBK_LP_DATA_FILE=/absolute/private/directory/fund-iii.json
+# from prototype/, after sourcing a private env file that sets the PG* variables
+export OBK_LP_DATA_FILE="$PWD/public/lp-data/fund-iii.json"
 npm run export:fund-iii
-npm run dev
-# Or run npm run build, then npm run preview with the same OBK_LP_DATA_FILE.
+npm run build && npm run preview
 ```
 
-The exporter refuses destinations inside this repository. Never place actual
-reports in `src/`, `public/`, or another public repo. Refresh the export for each
-reporting update. The UI displays export time separately from the summary's as-of
-date; export time does not establish freshness of the underlying database records.
+The exporter verifies that the login is a non-privileged role with no write
+access to `properties` or `funds`. Until a dedicated LP reader role is
+provisioned (CONNECT, schema USAGE, SELECT on the listed columns only), the demo
+can run with `OBK_LP_ALLOW_ADMIN_ROLE=1`, which bypasses only that role check and
+prints a warning. Do not use the override outside local demos.
+
+### Summary measures
+
+If the owner supplies a `public.lp_fund_iii_summary` view (`fund_name`,
+`as_of_date`, `metric`, `state`, `value`) it is authoritative. Otherwise the
+export reports only what property status supports: occupied homes is the count
+of Fund III homes whose status is `Rented`, and occupancy is that count divided
+by homes in the fund. Capital recycling, stabilized homes, stabilization rate,
+and refinance pipeline remain "Not yet reported" until an approved source
+exists. The as-of date is the export date because the database records no
+status date.
 
 ### Exact acquisition columns
 

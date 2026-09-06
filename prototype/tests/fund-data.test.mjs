@@ -250,7 +250,9 @@ test("local HTTP route serves validated LP data, fails closed and rejects cross-
     server: { host: "127.0.0.1", port: 0, strictPort: false, open: false },
   });
   try {
-    delete process.env.OBK_LP_DATA_FILE;
+    // An explicit path that does not exist must fail closed, even when a
+    // gitignored demo export is present in public/lp-data/.
+    process.env.OBK_LP_DATA_FILE = join(temp, "absent.json");
     await server.listen();
     const address = server.httpServer.address();
     const url = `http://127.0.0.1:${address.port}/lp-data/fund-iii.json`;

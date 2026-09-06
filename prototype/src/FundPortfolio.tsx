@@ -3,6 +3,7 @@ import { Alert, Button, Input, Table, Tooltip, Tag } from "antd";
 import type { TableColumnsType } from "antd";
 import {
   ArrowRightOutlined,
+  HomeOutlined,
   InfoCircleOutlined,
   SearchOutlined,
 } from "@ant-design/icons";
@@ -76,7 +77,14 @@ export default function FundPortfolio() {
           {p.photo ? (
             <img src={p.photo.image} alt="" />
           ) : (
-            <span className="photo-unmatched">Photo unconfirmed</span>
+            <span
+              className="photo-unmatched"
+              role="img"
+              aria-label="Photo unconfirmed"
+              title="Photo unconfirmed"
+            >
+              <HomeOutlined />
+            </span>
           )}
           <span>
             {p.name}
@@ -130,7 +138,7 @@ export default function FundPortfolio() {
             <ArrowRightOutlined />
           </Link>
         ) : (
-          <span className="pending">Not linked</span>
+          <span className="pending">Report pending</span>
         ),
     },
   ];
@@ -213,7 +221,7 @@ export default function FundPortfolio() {
         </div>
         <p className="source-note">
           {report.data
-            ? `Exported ${new Date(report.data.exportedAt).toLocaleString()}. Acquisition values reflect the database at export time.`
+            ? `Exported ${new Date(report.data.exportedAt).toLocaleString()} from the portfolio database. Occupied homes and occupancy are derived from each home's recorded status; the remaining measures await an approved summary source.`
             : "No financial snapshot is available."}{" "}
           Zero is a reported value; “Missing” means the source lacks a value;
           “Not yet reported” means no approved report has supplied it. Photo

@@ -1,7 +1,12 @@
 # Codex tasks — investor site
 
-Owner instructions recorded 2026-09-06. Implement in `prototype/`. Commit and push
-the current stage first, then continue development on `feat/investor-portal-prototype`.
+Owner instructions recorded 2026-09-06. Implement in `prototype/`.
+
+**Status 2026-09-06:** both tasks implemented on `feat/investor-portal-prototype`
+(commits `1559304`, `54137f6`, and the demo-readiness follow-up). The Fund III tab
+is driven by a read-only export of the cockpit database; see `prototype/README.md`.
+Open owner inputs: photo-to-address matches for 33 photographs, a dedicated LP
+reader role, and an approved source for the four non-derivable summary measures.
 
 ## 1. Portfolio tab and Fund III Portfolio tab: consistent photos and addresses
 

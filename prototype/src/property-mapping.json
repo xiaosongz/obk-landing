@@ -5,7 +5,7 @@
     "address": "4401 Avenue I",
     "location": "Birmingham, AL 35208",
     "status": "current",
-    "cockpitAddress": null
+    "cockpitAddress": "4401 Avenue I"
   },
   {
     "id": "4129-avenue-q",
@@ -13,7 +13,7 @@
     "address": "4129 Avenue Q",
     "location": "Birmingham, AL 35208",
     "status": "current",
-    "cockpitAddress": null
+    "cockpitAddress": "4129 Avenue Q"
   },
   {
     "id": "4011-43rd-avenue-n",
@@ -21,7 +21,7 @@
     "address": "4011 43rd Avenue N",
     "location": "Birmingham, AL 35217",
     "status": "current",
-    "cockpitAddress": null
+    "cockpitAddress": "4011 43rd Ave N"
   },
   {
     "id": "9645-9th-ave-n",
@@ -29,7 +29,7 @@
     "address": "9645 9th Ave N",
     "location": "Birmingham, AL 35211",
     "status": "current",
-    "cockpitAddress": null
+    "cockpitAddress": "9645 9th Ave N"
   },
   {
     "id": "portfolio-home-5",
