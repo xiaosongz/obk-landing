@@ -8,7 +8,8 @@
     "build": "tsc --noEmit && vite build",
     "format": "prettier --write src index.html vite.config.ts tsconfig.json package.json",
     "preview": "vite preview --host 127.0.0.1 --port 8766 --strictPort",
-    "export:fund-iii": "node scripts/export-fund-iii.mjs",
+    "snapshot:load": "node scripts/lp-snapshot-load.mjs",
+    "snapshot:publish": "node scripts/lp-snapshot-publish.mjs",
     "test:fund-data": "node --test tests/fund-data.test.mjs",
     "check:worker": "tsc -p tsconfig.worker.json",
     "deploy": "npm run build && npm run check:worker && wrangler deploy"

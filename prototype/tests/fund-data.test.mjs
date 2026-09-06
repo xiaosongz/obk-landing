@@ -16,7 +16,11 @@ import {
   parseFundSnapshot,
   matchPropertyPhoto,
 } from "../src/fund-data.ts";
-import { makeSnapshot } from "../scripts/export-fund-iii.mjs";
+import {
+  connectionEnv,
+  makeSnapshot,
+  quoteSnapshot,
+} from "../scripts/lp-snapshot-lib.mjs";
 
 // Synthetic values only. These are never bundled or presented as actual properties.
 const reported = (value) => ({ state: "reported", value });
@@ -313,7 +317,7 @@ test("rendered Fund III page displays supplied values without assigning source p
 });
 
 test("CLI passes read-only SQL, writes atomically outside the repo, and preserves reports on rejected roles", async () => {
-  const temp = await mkdtemp(join(tmpdir(), "obk-lp-export-test-"));
+  const temp = await mkdtemp(join(tmpdir(), "obk-lp-publish-test-"));
   try {
     const output = join(temp, "fund-iii.json");
     const fake = join(temp, "psql");
@@ -321,9 +325,9 @@ test("CLI passes read-only SQL, writes atomically outside the repo, and preserve
       fake,
       `#!/usr/bin/env node
 let sql=''; process.stdin.on('data', chunk => sql+=chunk); process.stdin.on('end', () => {
- if(!sql.includes('REPEATABLE READ READ ONLY') || !sql.includes("fund_name = 'Fund III'") || !sql.includes("Acquisition Terminated") || !sql.includes('ROLLBACK;') || !process.argv.includes('-w') || process.env.PGOPTIONS !== '-c default_transaction_read_only=on') process.exit(2);
+ if(!sql.includes('REPEATABLE READ READ ONLY') || !sql.includes("fund_name = 'Fund III'") || !sql.includes("public.fund_snapshot_metrics") || !sql.includes("public.fund_snapshot_properties") || !sql.includes("public.fund_snapshot_latest") || sql.includes("obk_merger") || sql.includes("public.properties") || sql.includes("has_table_privilege") || !sql.includes("NOT rolsuper") || !sql.includes('ROLLBACK;') || !process.argv.includes('-w') || process.env.PGOPTIONS !== '-c default_transaction_read_only=on') process.exit(2);
  console.log(process.env.TEST_REJECT ? 'rejected-role' : 'lp-read-only');
- console.log(${JSON.stringify(JSON.stringify(directory))});
+ console.log(process.env.TEST_BAD_REPORT ? '{"unexpected":true}' : ${JSON.stringify(JSON.stringify(makeSnapshot(directory)))});
 });`,
       { mode: 0o700 },
     );
@@ -335,7 +339,7 @@ let sql=''; process.stdin.on('data', chunk => sql+=chunk); process.stdin.on('end
       OBK_LP_DATA_FILE: output,
     };
     const run = promisify(execFile);
-    await run(process.execPath, ["scripts/export-fund-iii.mjs"], { env });
+    await run(process.execPath, ["scripts/lp-snapshot-publish.mjs"], { env });
     const original = await readFile(output, "utf8");
     assert.equal(
       parseFundSnapshot(JSON.parse(original)).properties[0].purchasePrice,
@@ -343,13 +347,19 @@ let sql=''; process.stdin.on('data', chunk => sql+=chunk); process.stdin.on('end
     );
     assert.equal((await stat(output)).mode & 0o777, 0o600);
     await assert.rejects(
-      run(process.execPath, ["scripts/export-fund-iii.mjs"], {
-        env: { ...env, TEST_REJECT: "1" },
+      run(process.execPath, ["scripts/lp-snapshot-publish.mjs"], {
+        env: { ...env, TEST_REJECT: "1", OBK_LP_ALLOW_ADMIN_ROLE: "1" },
       }),
     );
     assert.equal(await readFile(output, "utf8"), original);
     await assert.rejects(
-      run(process.execPath, ["scripts/export-fund-iii.mjs"], {
+      run(process.execPath, ["scripts/lp-snapshot-publish.mjs"], {
+        env: { ...env, TEST_BAD_REPORT: "1" },
+      }),
+    );
+    assert.equal(await readFile(output, "utf8"), original);
+    await assert.rejects(
+      run(process.execPath, ["scripts/lp-snapshot-publish.mjs"], {
         env: {
           ...env,
           OBK_LP_DATA_FILE: join(process.cwd(), "public", "forbidden.json"),
@@ -379,7 +389,26 @@ test("local HTTP route serves validated LP data, fails closed and rejects cross-
     const path = join(temp, "fund-iii.json");
     process.env.OBK_LP_DATA_FILE = path;
     const data = makeSnapshot(directory);
-    await writeFile(path, JSON.stringify(data));
+    await writeFile(
+      join(temp, "psql"),
+      `#!/usr/bin/env node
+process.stdin.resume(); process.stdin.on('end', () => {
+ console.log('lp-read-only'); console.log(${JSON.stringify(JSON.stringify(data))});
+});`,
+      { mode: 0o700 },
+    );
+    await promisify(execFile)(
+      process.execPath,
+      ["scripts/lp-snapshot-publish.mjs"],
+      {
+        env: {
+          ...process.env,
+          PATH: `${temp}:${process.env.PATH}`,
+          PGSERVICE: "synthetic_snapshot",
+          OBK_LP_DATA_FILE: path,
+        },
+      },
+    );
     const response = await fetch(url);
     assert.equal(response.status, 200);
     assert.equal(response.headers.get("cache-control"), "no-store");
@@ -400,4 +429,180 @@ test("local HTTP route serves validated LP data, fails closed and rejects cross-
     else process.env.OBK_LP_DATA_FILE = previous;
     await rm(temp, { recursive: true, force: true });
   }
+});
+
+test("dollar-quote guard rejects payload tags and invalid tag identifiers", () => {
+  assert.equal(
+    quoteSnapshot("{}", "safe_tag"),
+    "$safe_tag${}$safe_tag$::jsonb",
+  );
+  assert.throws(() =>
+    quoteSnapshot('{"address":"contains_safe_tag_here"}', "safe_tag"),
+  );
+  assert.throws(() => quoteSnapshot("{}", "bad$tag"));
+  const quoted = quoteSnapshot(JSON.stringify(makeSnapshot(directory)));
+  assert.match(quoted, /^\$obk_lp_[0-9a-f]{32}\$/);
+});
+
+test("source and target connection settings are isolated, including service mode", () => {
+  const env = {
+    PGHOST: "synthetic_target",
+    PGUSER: "target",
+    PGDATABASE: "target",
+    PGPASSWORD: "synthetic-target-password",
+    PGSERVICE: "target_service",
+    PGOPTIONS: "unsafe option",
+    PGSERVICEFILE: "/unused-service-file",
+    OBK_COCKPIT_PGHOST: "synthetic_source",
+    OBK_COCKPIT_PGPORT: "1111",
+    OBK_COCKPIT_PGUSER: "source",
+    OBK_COCKPIT_PGDATABASE: "source",
+    OBK_COCKPIT_PGPASSWORD: "synthetic-source-password",
+  };
+  const source = connectionEnv(true, env);
+  assert.equal(source.PGHOST, "synthetic_source");
+  assert.equal(source.PGPASSWORD, "synthetic-source-password");
+  assert.equal(source.PGSERVICE, undefined);
+  assert.equal(source.PGOPTIONS, undefined);
+  assert.equal(source.PGSERVICEFILE, undefined);
+  assert(!Object.keys(source).some((key) => key.startsWith("OBK_COCKPIT_")));
+  const target = connectionEnv(false, env);
+  assert.equal(target.PGHOST, "synthetic_target");
+  assert.equal(target.PGPASSWORD, "synthetic-target-password");
+  assert(!Object.keys(target).some((key) => key.startsWith("OBK_COCKPIT_")));
+  assert.throws(() =>
+    connectionEnv(true, {
+      PGHOST: "target",
+      PGUSER: "target",
+      PGDATABASE: "target",
+    }),
+  );
+  assert.equal(
+    connectionEnv(true, {
+      OBK_COCKPIT_PGSERVICE: "source_service",
+      PGSERVICE: "target_service",
+    }).PGSERVICE,
+    "source_service",
+  );
+});
+
+test("loader routes a validated snapshot from read-only cockpit to target and gates source override", async () => {
+  const temp = await mkdtemp(join(tmpdir(), "obk-lp-load-test-"));
+  try {
+    const marker = join(temp, "loaded");
+    await writeFile(
+      join(temp, "psql"),
+      `#!/usr/bin/env node
+const fs = require('node:fs');
+let sql = ''; process.stdin.on('data', chunk => sql += chunk); process.stdin.on('end', () => {
+ if (process.env.OBK_COCKPIT_PGHOST || !process.argv.includes('-X') || !process.argv.includes('-w')) process.exit(2);
+ if (process.env.PGHOST === 'synthetic_source') {
+  if (process.env.PGUSER !== 'reader' || process.env.PGDATABASE !== 'synthetic_cockpit' || process.env.PGPASSWORD !== 'synthetic-source-password' || process.env.PGSERVICE || !sql.includes('REPEATABLE READ READ ONLY') || !sql.includes('Acquisition Terminated') || !sql.includes('obk_merger.property_capitalization') || !sql.includes('has_any_column_privilege') || !sql.includes('ROLLBACK;') || process.env.PGOPTIONS !== '-c default_transaction_read_only=on') process.exit(3);
+  console.log(process.env.TEST_REJECT ? 'rejected-role' : 'lp-read-only');
+  console.log(process.env.TEST_BAD_REPORT ? '{"fundCount":1,"unexpected":true}' : ${JSON.stringify(JSON.stringify(directory))});
+ } else if (process.env.PGHOST === 'synthetic_target') {
+  if (process.env.PGUSER !== 'owner' || process.env.PGDATABASE !== 'synthetic_lp' || process.env.PGPASSWORD !== 'synthetic-target-password' || process.env.PGOPTIONS !== '-c default_transaction_read_only=off' || !sql.includes('COMMIT;') || sql.includes('obk_merger')) process.exit(4);
+  const match = sql.match(/load_fund_snapshot\\(\\$(obk_lp_[a-f0-9]+)\\$([\\s\\S]*)\\$\\1\\$::jsonb\\)/);
+  if (!match || JSON.parse(match[2]).schemaVersion !== 2) process.exit(5);
+  fs.writeFileSync(${JSON.stringify(marker)}, match[2]);
+  console.log('42');
+ } else process.exit(6);
+});`,
+      { mode: 0o700 },
+    );
+    const env = {
+      ...process.env,
+      PATH: `${temp}:${process.env.PATH}`,
+      PGHOST: "synthetic_target",
+      PGPORT: "2222",
+      PGUSER: "owner",
+      PGDATABASE: "synthetic_lp",
+      PGPASSWORD: "synthetic-target-password",
+      PGSERVICE: "",
+      OBK_COCKPIT_PGHOST: "synthetic_source",
+      OBK_COCKPIT_PGPORT: "1111",
+      OBK_COCKPIT_PGUSER: "reader",
+      OBK_COCKPIT_PGDATABASE: "synthetic_cockpit",
+      OBK_COCKPIT_PGPASSWORD: "synthetic-source-password",
+      OBK_COCKPIT_PGSERVICE: "",
+      OBK_LP_ALLOW_ADMIN_ROLE: "0",
+    };
+    const run = (extra = {}) =>
+      promisify(execFile)(process.execPath, ["scripts/lp-snapshot-load.mjs"], {
+        env: { ...env, ...extra },
+      });
+    assert.match((await run()).stdout, /snapshot_id: 42/);
+    assert.deepEqual(
+      parseFundSnapshot(JSON.parse(await readFile(marker, "utf8"))).properties,
+      directory.properties,
+    );
+    await rm(marker);
+    await assert.rejects(run({ TEST_REJECT: "1" }));
+    await assert.rejects(stat(marker));
+    assert.match(
+      (await run({ TEST_REJECT: "1", OBK_LP_ALLOW_ADMIN_ROLE: "1" })).stderr,
+      /WARNING:.*privileged/,
+    );
+    await rm(marker);
+    await assert.rejects(run({ TEST_BAD_REPORT: "1" }), (error) => {
+      assert(!error.stderr.includes("synthetic-source-password"));
+      assert(!error.stderr.includes("synthetic-target-password"));
+      return true;
+    });
+    await assert.rejects(stat(marker));
+  } finally {
+    await rm(temp, { recursive: true, force: true });
+  }
+});
+
+test("schema DDL and v2 parser have the exact same property and metric allowlists", async () => {
+  const ddl = await readFile(
+    new URL("../scripts/lp-snapshot-schema.sql", import.meta.url),
+    "utf8",
+  );
+  const ts = await readFile(
+    new URL("../src/fund-data.ts", import.meta.url),
+    "utf8",
+  );
+  const quoted = (text) =>
+    [...text.matchAll(/'([^']+)'/g)].map((match) => match[1]).sort();
+  const array = (name) =>
+    quoted(
+      ddl.match(
+        new RegExp(`${name} constant text\\[\\] := ARRAY\\[([\\s\\S]*?)\\]`),
+      )[1],
+    );
+  const properties = [
+    ...ts
+      .match(/interface FundProperty \{([\s\S]*?)\n\}/)[1]
+      .matchAll(/^  (\w+):/gm),
+  ]
+    .map((match) => match[1])
+    .sort();
+  assert.deepEqual(array("property_keys"), properties);
+  assert.deepEqual(array("metric_keys"), [...metricKeys, ...dateKeys].sort());
+  assert.deepEqual(array("date_keys"), [...dateKeys].sort());
+  const metricCheck = ddl.match(
+    /metric text NOT NULL CHECK \(metric IN \(([\s\S]*?)\)\)/,
+  )[1];
+  assert.deepEqual(quoted(metricCheck), [...metricKeys, ...dateKeys].sort());
+  const table = ddl.match(
+    /CREATE TABLE IF NOT EXISTS public.fund_snapshot_properties \(([\s\S]*?)\n\);/,
+  )[1];
+  const columns = [
+    ...table.matchAll(/^  (\w+) (?:bigint|text|date|numeric|boolean)\b/gm),
+  ].map((match) => match[1]);
+  assert.deepEqual(
+    columns
+      .filter((key) => key !== "snapshot_id")
+      .map((key) =>
+        key.replace(/_([a-z])/g, (_, letter) => letter.toUpperCase()),
+      )
+      .sort(),
+    properties,
+  );
+  assert.match(
+    ddl,
+    /FUNCTION public\.load_fund_snapshot\(payload jsonb\)\s+RETURNS bigint/,
+  );
 });

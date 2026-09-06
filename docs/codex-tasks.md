@@ -7,8 +7,8 @@ Owner instructions recorded 2026-09-06. Implement in `prototype/`.
 export of the cockpit database; see `prototype/README.md`. All 38 photographs are
 matched to database records. Funds I and II merged into Fund III, so the export covers
 every current home. Task 3 (below) is implemented: the export reads the cockpit's
-merger-model cost basis and emits a sourced fund-level snapshot (schema v2). **Task 4 (below) is open:** move the website's data into its own snapshot
-database. Open owner input: confirm 328 vs 329 Valley Crest.
+merger-model cost basis and emits a sourced fund-level snapshot (schema v2). Task 4 (below) is implemented: the website reads only the `obk_lp` snapshot
+database (`npm run snapshot:load`, then `npm run snapshot:publish`). Open owner input: confirm 328 vs 329 Valley Crest.
 
 ## 1. Portfolio tab and Fund III Portfolio tab: consistent photos and addresses
 

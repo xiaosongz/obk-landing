@@ -1,4 +1,4 @@
--- Run only through export-fund-iii.mjs in a read-only transaction.
+-- Run only through lp-snapshot-load.mjs in a read-only transaction.
 -- No GP API, tenants, investors, transactions, or SELECT *.
 -- Funds I and II merged into Fund III (owner confirmation, 2026-09-06).
 -- fund_id is the original acquisition vehicle, so keep every active property.

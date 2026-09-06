@@ -35,7 +35,7 @@ The full business-process copy is retained in expandable reading sections. Illus
 - Funds I and II merged into Fund III; every current home is Fund III. The database's per-property fund column is the historical acquisition vehicle and is not shown to investors. One photo file (named 328 Valley Crest) was matched by street name to the database address 329 Valley Crest Drive; the owner should confirm which number is correct.
 - The investor account uses a fictional identity and illustrative capital amounts. Preferred-return/promote values and property financial cells remain unfilled. No personal investor record, tenant record, legal agreement, or screenshot financial table is imported.
 - The source login page was blank. The featured-video slot and subscription-agreement link had no supplied content. These omissions are labeled rather than filled with invented material.
-- Production must use authenticated server-side investor/fund authorization and the existing cockpit’s approved financial read models. Source narrative definitions need reconciliation with those models before displaying calculated results.
+- Production must use authenticated server-side investor/fund authorization and the website’s own snapshot database, populated from approved cockpit financial read models by a GP-side job. Source narrative definitions need reconciliation with those models before displaying calculated results.
 
 ## Maintenance
 
@@ -83,53 +83,108 @@ npm run deploy                         # build, typecheck the worker, deploy
 
 `npx wrangler dev --port 8790` runs the gate locally with values from the
 gitignored `.dev.vars`. Deployment ships whatever is in `public/lp-data/` at
-build time, so run the Fund III export first when the data should be current.
+build time, so run the snapshot load and publish steps first when the data should be current.
 
-## Fund III: private read-only export
+## Snapshot database
 
-The LP prototype never calls the GP cockpit API or uses a GP session. A small
-Node exporter runs `psql` through an explicitly configured **dedicated read-only
-libpq service**, selects every current property (Funds I and II merged into Fund III), validates an exact LP
-field allowlist, and atomically writes a mode-0600 JSON snapshot **outside this
-repository** or in the gitignored demo data directory. Snapshots are never committed;
-a build includes a snapshot only when the owner places it in `public/lp-data/`.
-Credentials and connection settings are never bundled. The Vite dev/preview server exposes the validated file at
-`/lp-data/fund-iii.json` only to loopback requests with a local Host and matching
-Origin, with `Cache-Control: no-store`. The browser uses this route without
-credentials or redirects. Missing files, malformed reports, and HTML fallbacks
-are never treated as financial reports.
+**The website never connects to the cockpit database.** A GP-side load job reads
+only the allowlisted cockpit columns below and copies a validated v2 snapshot
+into the separate `obk_lp` database. The publisher connects only to `obk_lp` and
+rebuilds the website JSON from normalized tables. The browser and preview worker
+serve the published file; neither has database credentials or a GP session.
+Investor-account tables are deferred. No raw JSON payload, investor identities,
+tenants, transactions, or credentials are stored in these tables or committed.
 
-### Running the export
+| `obk_lp` table / view | Columns and purpose |
+|---|---|
+| `public.fund_snapshots` | `snapshot_id` (bigserial PK), `fund_name`, `exported_at`, `summary_as_of`, `source_label`, `loaded_at` (defaults to now); v2 header and load metadata |
+| `public.fund_snapshot_metrics` | `snapshot_id` (FK), `metric`, `state`, `value_number`, `value_date`; PK `(snapshot_id, metric)`; exactly the 10 numeric and 3 date v2 measures |
+| `public.fund_snapshot_properties` | `snapshot_id` (FK), `property_id`, `address`, `status`, `purchase_date`, `purchase_price`, `renovation_cost`, `total_capitalization`, `cost_from_merger_model`; PK `(snapshot_id, property_id)` |
+| `public.fund_snapshot_latest` (view) | Newest `exported_at` per fund, breaking ties by descending `snapshot_id`; loading an older export does not replace a newer one |
 
-Requires Node 22.18+ (native TypeScript stripping) and `psql` on PATH. The
-connection comes from a named libpq service (`PGSERVICE`) or explicit `PGHOST`,
-`PGPORT`, `PGUSER`, `PGDATABASE` variables; the password stays in the libpq
-password file or `PGPASSWORD`, sourced from a private env file, never typed inline.
-All queries run in one repeatable-read, read-only transaction with timeouts, no
-psqlrc, no password prompts, and a final rollback. Failures preserve the previous
-snapshot and do not print database error details.
+`public.load_fund_snapshot(payload jsonb) RETURNS bigint` validates exact v2 keys
+at every level, reporting states, types, dates, amounts, counts and TTM windows,
+then inserts the header, metrics and properties atomically. A rejection rolls
+back all rows for that load. It returns the new `snapshot_id`. The function uses
+invoker privileges and is not executable by PUBLIC; the database owner can run
+it. `source_label` is fixed load metadata, not an extra payload field. The
+publisher reconstructs `schemaVersion: 2` and does not expose load metadata.
+Applying the DDL again preserves existing rows and replaces the view/function.
 
-The exporter accepts two destinations: any path outside the repository, or the
-gitignored `public/lp-data/` directory. The second makes a demo build
-self-contained: `npm run build` copies the snapshot into `dist/`, and `npm run
-dev` / `npm run preview` serve it at `/lp-data/fund-iii.json` to loopback
-requests only. `OBK_LP_DATA_FILE` pointing elsewhere takes precedence.
+### Owner setup and two-step run
+
+Requires Node 22.18+ (native TypeScript stripping) and `psql` on PATH. Run from
+`prototype/`. The private `.env.lp-snapshot` file contains **target** settings only.
+The scripts do not open env files; source them into the owner's shell without
+printing them. Do not enable shell tracing. Vite env-file loading is disabled,
+so builds and local route tests do not read `.env*` files.
 
 ```sh
-# from prototype/, after sourcing a private env file that sets the PG* variables
+# One-time schema apply: owner action, target is obk_lp.
+set -a
+. ./.env.lp-snapshot
+set +a
+psql -X -w -v ON_ERROR_STOP=1 -f scripts/lp-snapshot-schema.sql
+
+# Step 1: GP-side load. Configure/export OBK_COCKPIT_PGSERVICE for an existing
+# read-only cockpit service, OR the five OBK_COCKPIT_PG* settings listed below
+# from a separate private source. Keep the target PG* settings above in place.
+npm run snapshot:load
+
+# Step 2: publish only from obk_lp. Can run separately with just target PG*.
+mkdir -p public/lp-data
 export OBK_LP_DATA_FILE="$PWD/public/lp-data/fund-iii.json"
-npm run export:fund-iii
-npm run build && npm run preview
+npm run snapshot:publish
+npm run build
+# After reviewing the snapshot, redeploy through the existing preview gate:
+# npm run deploy
 ```
 
-The exporter verifies that the login is a non-privileged role with no write
-access to `public.properties`, `public.funds`, or any of the three `obk_merger`
-tables below (including column-level writes). The LP reader now needs database
-CONNECT, USAGE on schemas `public` **and `obk_merger`**, and SELECT on the listed
-columns in both schemas. PostgreSQL grants SELECT on tables/columns, not on a
-schema itself. Until that dedicated LP reader role is provisioned, the demo
-can run with `OBK_LP_ALLOW_ADMIN_ROLE=1`, which bypasses only that role check and
-prints a warning. Do not use the override outside local demos.
+### Exact script environment inputs
+
+| Script | Environment variables |
+|---|---|
+| `lp-snapshot-load.mjs` — cockpit source | `OBK_COCKPIT_PGHOST`, `OBK_COCKPIT_PGPORT`, `OBK_COCKPIT_PGUSER`, `OBK_COCKPIT_PGDATABASE`, `OBK_COCKPIT_PGPASSWORD`, or `OBK_COCKPIT_PGSERVICE`; `OBK_LP_ALLOW_ADMIN_ROLE` bypasses only the source role gate when exactly `1`, with a warning |
+| `lp-snapshot-load.mjs` — snapshot target | `PGHOST`, `PGPORT`, `PGUSER`, `PGDATABASE`, `PGPASSWORD`, or `PGSERVICE` |
+| `lp-snapshot-publish.mjs` | Target `PGHOST`, `PGPORT`, `PGUSER`, `PGDATABASE`, `PGPASSWORD`, or `PGSERVICE`; required `OBK_LP_DATA_FILE`. No cockpit settings or admin override are used |
+| `lp-snapshot-lib.mjs` | Shared helpers read the same six connection variables (source-prefixed when requested); other helpers receive their inputs as arguments |
+| `lp-snapshot-schema.sql`, `fund-iii.sql` | No environment variables read by the SQL itself; `psql` uses the supplied connection environment |
+
+For each connection, require a service or explicit host, user and database;
+port/password are optional according to libpq authentication. The source's six
+variables are mapped onto its child's `PG*`; target settings never fill missing
+source settings. Only those six libpq variables are forwarded: inherited
+`PGOPTIONS`, `PGSERVICEFILE`, `PGPASSFILE`, SSL variables and other `PG*` settings
+are not passed through. Use a default libpq service file for additional connection
+options and a default password file or the password variable for authentication.
+Non-connection process environment (including `PATH` and `HOME`, which locate
+`psql` and default libpq files) is inherited; `OBK_COCKPIT_*` is stripped from both
+children. Each child gets `PGCONNECT_TIMEOUT=5` and a controlled `PGOPTIONS`:
+`-c default_transaction_read_only=on` for reads, `off` for the target load.
+No connection settings or database error details are logged.
+
+Cockpit reads retain the existing role gate: no superuser, role/database creation,
+replication, RLS bypass, or table/column writes on the five source tables. The
+existing `obk_reader` kind of role needs CONNECT, USAGE on `public` and
+`obk_merger`, and SELECT on the columns below. The source-only admin override is
+for local demos. Publishing refuses superusers even with the override set, and
+permits the `obk_lp` owner with INSERT/UPDATE/DELETE privileges. Both reads use a
+repeatable-read READ ONLY transaction, 15-second statement timeout, UTC/ISO dates,
+and a final rollback. All psql calls ignore psqlrc, refuse password prompts, and
+have a 30-second process timeout. The target load uses a separate write transaction
+and a random dollar-quote tag checked against the validated payload.
+
+Publishing accepts an existing parent directory outside the repository, or the
+exact gitignored `public/lp-data/` directory (resolved through symlinks). It writes
+a mode-0600 temporary file and atomically renames it only after v2 validation;
+failures preserve the previous file. Snapshots are never committed. Builds include
+the file only when the owner publishes it into `public/lp-data/`.
+
+For local dev/preview, `OBK_LP_DATA_FILE` takes precedence over that demo file.
+`/lp-data/fund-iii.json` serves validated JSON only to loopback requests with a
+local Host and matching Origin, with `Cache-Control: no-store`. The browser uses
+this route without credentials or redirects. Missing files, malformed reports,
+and HTML fallbacks are never treated as financial reports.
 
 ### Summary measures
 
@@ -207,7 +262,7 @@ including joins, filters, and ordering:
 | `obk_merger.merger_run_log` | `run_id` | Select latest run; not exported |
 | `obk_merger.merger_run_log` | `as_of_date` | `costAsOf`, primary `summaryAsOf` |
 
-The exporter's existing role check also reads `pg_catalog.pg_roles` columns
+The loader's source role check also reads `pg_catalog.pg_roles` columns
 `rolname`, `rolsuper`, `rolcreatedb`, `rolcreaterole`, `rolreplication`, and
 `rolbypassrls`, and checks table/column write privileges on all five application
 tables with `has_table_privilege` and `has_any_column_privilege`. These role
@@ -215,7 +270,7 @@ attributes never enter the snapshot. Neither `fund_id`, `computed_at`, nor store
 `noi_yield` is read: fund ratios are calculated from sums (the per-home
 `collection_rate` is only used to recover rent collected). No investor, tenant, lease, transaction, bank, or GP-only fields are
 selected; no `SELECT *` is used. The database name comes solely from the owner's
-libpq connection (`PGDATABASE` or `PGSERVICE`), never a hard-coded database name.
+source connection (`OBK_COCKPIT_PGDATABASE` or `OBK_COCKPIT_PGSERVICE`), never a hard-coded database name.
 
 ### Snapshot schema v2
 
@@ -235,11 +290,11 @@ libpq connection (`PGDATABASE` or `PGSERVICE`), never a hard-coded database name
 
 Unknown or missing fields fail closed at every report level. Version-1 snapshots
 are rejected: the owner must regenerate the private snapshot with
-`npm run export:fund-iii`, then rebuild and redeploy (`npm run deploy`) through
-the existing password-gated preview. Grant the additional merger-table reads
-before exporting. Do not commit the snapshot, credentials, or investor data.
-Task 3 validation uses synthetic records and a fake `psql` executable only;
-the live export and deployment remain owner actions.
+`npm run snapshot:load` and `npm run snapshot:publish`, then rebuild and redeploy
+(`npm run deploy`) through the existing password-gated preview. Do not commit the
+snapshot, credentials, or investor data. Task 4 validation uses synthetic records,
+DDL text inspection and a fake `psql` executable only; no database was connected.
+Schema application, live load/publish and deployment remain owner actions.
 
 ### Photo matching and production handoff
 
@@ -259,10 +314,11 @@ snapshot on a public static deployment. The demo login is not authorization;
 the local Vite file route is not part of the production build.
 
 `npm run test:fund-data` verifies synthetic value states, rejected/extra fields,
-exact photo matching, exporter subprocess behavior and atomic preservation, and
+exact photo matching, loader/publisher subprocess behavior and atomic preservation, and
 the actual local HTTP route (success, absent/invalid report, cross-origin denial).
 It also covers schema v2, a synthetic PID 38 fallback, >100% collection rates,
-TTM dates, and rendering the sourced summary grid and fallback hint.
+TTM dates, connection isolation, source-only role override, publisher superuser
+rejection, dollar-quote guard, DDL/parser allowlist parity, and rendering the sourced summary grid and fallback hint.
 `npm run build` checks TypeScript and builds production assets. Tests use no real
 DB connection or real records and are not bundled. The remaining stage and
 property-detail financial templates are outside task 3. `npm run check:worker`

@@ -71,4 +71,7 @@ function privateFundReport(): Plugin {
   };
 }
 
-export default defineConfig({ plugins: [react(), privateFundReport()] });
+export default defineConfig({
+  envDir: false,
+  plugins: [react(), privateFundReport()],
+});
