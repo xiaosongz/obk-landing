@@ -65,6 +65,26 @@ remain on disk with no assigned address; the owner must verify their relationshi
 before adding them to the canonical mapping. No visual similarity is treated as
 an address match. There are no longer separately maintained portfolio photo arrays.
 
+## Preview deployment (Cloudflare)
+
+`landing.obelisk-gp.com` is served by a Cloudflare Worker (`wrangler.jsonc`,
+`worker/gate.ts`) that delivers `dist/` as static assets behind a shared-password
+gate. Every request, including data files, gets the password page until the
+correct password sets a signed HttpOnly cookie (30 days). The password and the
+cookie-signing key are Worker secrets, never committed. Changing the password
+signs everyone out. Responses carry `X-Robots-Tag: noindex`.
+
+```sh
+npx wrangler login                     # once per machine
+npx wrangler secret put SITE_PASSWORD  # once; paste when prompted
+npx wrangler secret put GATE_SECRET    # once; any long random string
+npm run deploy                         # build, typecheck the worker, deploy
+```
+
+`npx wrangler dev --port 8790` runs the gate locally with values from the
+gitignored `.dev.vars`. Deployment ships whatever is in `public/lp-data/` at
+build time, so run the Fund III export first when the data should be current.
+
 ## Fund III: private read-only export
 
 The LP prototype never calls the GP cockpit API or uses a GP session. A small
