@@ -1,0 +1,17 @@
+{
+  // Cloudflare Worker serving the built site with a password gate in front.
+  // Deploy: npm run deploy (builds dist/ first). Secrets are set once with
+  // `wrangler secret put SITE_PASSWORD` and `wrangler secret put GATE_SECRET`.
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "obk-landing",
+  "main": "worker/gate.ts",
+  "compatibility_date": "2026-09-01",
+  "assets": {
+    "directory": "./dist",
+    "binding": "ASSETS",
+    "not_found_handling": "single-page-application",
+    "run_worker_first": true
+  },
+  "routes": [{ "pattern": "landing.obelisk-gp.com", "custom_domain": true }],
+  "observability": { "enabled": true }
+}
