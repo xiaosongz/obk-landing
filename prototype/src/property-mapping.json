@@ -1,298 +1,345 @@
 [
   {
-    "id": "2-4401-avenue-i",
-    "photo": "/images/property-detail-01.png",
-    "address": "4401 Avenue I",
-    "location": "Birmingham, AL 35208",
+    "id": "9645-9th-ave-n",
+    "propertyId": 1,
+    "photo": "/images/properties/9645-9th-ave-n.jpg",
+    "address": "9645 9th Ave N",
+    "location": "Birmingham, AL 35217",
     "status": "current",
-    "cockpitAddress": "4401 Avenue I"
+    "cockpitAddress": "9645 9th Ave N"
+  },
+  {
+    "id": "213-22nd-st-sw",
+    "propertyId": 2,
+    "photo": "/images/properties/213-22nd-st-sw.jpg",
+    "address": "213 22nd St SW",
+    "location": "Birmingham, AL 35211",
+    "status": "current",
+    "cockpitAddress": "213 22nd St SW"
   },
   {
     "id": "4129-avenue-q",
-    "photo": "/images/home-02.png",
+    "propertyId": 3,
+    "photo": "/images/properties/4129-avenue-q.jpg",
     "address": "4129 Avenue Q",
     "location": "Birmingham, AL 35208",
     "status": "current",
     "cockpitAddress": "4129 Avenue Q"
   },
   {
-    "id": "4011-43rd-avenue-n",
-    "photo": "/images/home-03.png",
-    "address": "4011 43rd Avenue N",
+    "id": "4011-43rd-ave-n",
+    "propertyId": 4,
+    "photo": "/images/properties/4011-43rd-ave-n.jpg",
+    "address": "4011 43rd Ave N",
     "location": "Birmingham, AL 35217",
     "status": "current",
     "cockpitAddress": "4011 43rd Ave N"
   },
   {
-    "id": "9645-9th-ave-n",
-    "photo": "/images/home-04.png",
-    "address": "9645 9th Ave N",
+    "id": "7809-vienna-avenue",
+    "propertyId": 5,
+    "photo": "/images/properties/7809-vienna-avenue.jpg",
+    "address": "7809 Vienna Avenue",
+    "location": "Birmingham, AL 35206",
+    "status": "current",
+    "cockpitAddress": "7809 Vienna Avenue"
+  },
+  {
+    "id": "4617-n-richard-arrington-jr-blvd-n",
+    "propertyId": 6,
+    "photo": "/images/properties/4617-n-richard-arrington-jr-blvd-n.jpg",
+    "address": "4617 N Richard Arrington Jr Blvd N.",
+    "location": "Birmingham, AL 35212",
+    "status": "current",
+    "cockpitAddress": "4617 N Richard Arrington Jr Blvd N."
+  },
+  {
+    "id": "1444-30th-street-ensley",
+    "propertyId": 7,
+    "photo": "/images/properties/1444-30th-street-ensley.jpg",
+    "address": "1444 30th Street Ensley",
+    "location": "Birmingham, AL 35218",
+    "status": "current",
+    "cockpitAddress": "1444 30th Street Ensley"
+  },
+  {
+    "id": "1108-4th-ct-w",
+    "propertyId": 8,
+    "photo": "/images/properties/1108-4th-ct-w.jpg",
+    "address": "1108 4th Ct W",
+    "location": "Birmingham, AL 35204",
+    "status": "current",
+    "cockpitAddress": "1108 4th Ct W"
+  },
+  {
+    "id": "4324-43rd-ave-n",
+    "propertyId": 9,
+    "photo": "/images/properties/4324-43rd-ave-n.jpg",
+    "address": "4324 43rd Ave N",
+    "location": "Birmingham, AL 35217",
+    "status": "current",
+    "cockpitAddress": "4324 43rd Ave N"
+  },
+  {
+    "id": "720-23rd-st-sw",
+    "propertyId": 10,
+    "photo": "/images/properties/720-23rd-st-sw.jpg",
+    "address": "720 23rd St SW",
     "location": "Birmingham, AL 35211",
     "status": "current",
-    "cockpitAddress": "9645 9th Ave N"
+    "cockpitAddress": "720 23rd St SW"
   },
   {
-    "id": "portfolio-home-5",
-    "photo": "/images/home-05.png",
-    "address": null,
-    "location": null,
+    "id": "1429-alabama-sw",
+    "propertyId": 11,
+    "photo": "/images/properties/1429-alabama-sw.jpg",
+    "address": "1429 Alabama SW",
+    "location": "Birmingham, AL 35211",
     "status": "current",
-    "cockpitAddress": null
+    "cockpitAddress": "1429 Alabama SW"
   },
   {
-    "id": "portfolio-home-6",
-    "photo": "/images/home-06.png",
-    "address": null,
-    "location": null,
+    "id": "1642-graymont-ave",
+    "propertyId": 12,
+    "photo": "/images/properties/1642-graymont-ave.jpg",
+    "address": "1642 Graymont Ave",
+    "location": "Birmingham, AL 35208",
     "status": "current",
-    "cockpitAddress": null
+    "cockpitAddress": "1642 Graymont Ave"
   },
   {
-    "id": "portfolio-home-7",
-    "photo": "/images/home-07.png",
-    "address": null,
-    "location": null,
+    "id": "329-valley-crest-drive",
+    "propertyId": 13,
+    "photo": "/images/properties/329-valley-crest-drive.jpg",
+    "address": "329 Valley Crest Drive",
+    "location": "Birmingham, AL 35215",
     "status": "current",
-    "cockpitAddress": null
+    "cockpitAddress": "329 Valley Crest Drive",
+    "note": "Source photo file is named '328 Valley Crest'; matched by street name to database address '329 Valley Crest Drive'. Owner to confirm."
   },
   {
-    "id": "portfolio-home-8",
-    "photo": "/images/home-08.png",
-    "address": null,
-    "location": null,
+    "id": "7776-vienna-avenue",
+    "propertyId": 14,
+    "photo": "/images/properties/7776-vienna-avenue.jpg",
+    "address": "7776 Vienna Avenue",
+    "location": "Birmingham, AL 35206",
     "status": "current",
-    "cockpitAddress": null
+    "cockpitAddress": "7776 Vienna Avenue"
   },
   {
-    "id": "portfolio-home-9",
-    "photo": "/images/portfolio-09.png",
-    "address": null,
-    "location": null,
+    "id": "952-45th-street-ensley",
+    "propertyId": 15,
+    "photo": "/images/properties/952-45th-street-ensley.jpg",
+    "address": "952 45th Street Ensley",
+    "location": "Birmingham, AL 35208",
     "status": "current",
-    "cockpitAddress": null
+    "cockpitAddress": "952 45th Street Ensley"
   },
   {
-    "id": "portfolio-home-10",
-    "photo": "/images/portfolio-10.png",
-    "address": null,
-    "location": null,
+    "id": "4405-10th-ave",
+    "propertyId": 16,
+    "photo": "/images/properties/4405-10th-ave.jpg",
+    "address": "4405 10th Ave",
+    "location": "Birmingham, AL 35224",
     "status": "current",
-    "cockpitAddress": null
+    "cockpitAddress": "4405 10th Ave"
   },
   {
-    "id": "portfolio-home-11",
-    "photo": "/images/portfolio-11.png",
-    "address": null,
-    "location": null,
+    "id": "1421-31st-street-ensley",
+    "propertyId": 17,
+    "photo": "/images/properties/1421-31st-street-ensley.jpg",
+    "address": "1421 31st Street Ensley",
+    "location": "Birmingham, AL 35218",
     "status": "current",
-    "cockpitAddress": null
+    "cockpitAddress": "1421 31st Street Ensley"
   },
   {
-    "id": "portfolio-home-12",
-    "photo": "/images/portfolio-12.png",
-    "address": null,
-    "location": null,
+    "id": "1872-fulton-ave-sw",
+    "propertyId": 18,
+    "photo": "/images/properties/1872-fulton-ave-sw.jpg",
+    "address": "1872 Fulton Ave SW",
+    "location": "Birmingham, AL 35211",
     "status": "current",
-    "cockpitAddress": null
+    "cockpitAddress": "1872 Fulton Ave SW"
   },
   {
-    "id": "portfolio-home-13",
-    "photo": "/images/portfolio-13.png",
-    "address": null,
-    "location": null,
+    "id": "5809-court-q",
+    "propertyId": 19,
+    "photo": "/images/properties/5809-court-q.jpg",
+    "address": "5809 Court Q",
+    "location": "Birmingham, AL 35228",
     "status": "current",
-    "cockpitAddress": null
+    "cockpitAddress": "5809 Court Q"
   },
   {
-    "id": "portfolio-home-14",
-    "photo": "/images/portfolio-14.png",
-    "address": null,
-    "location": null,
+    "id": "937-4th-ct-w",
+    "propertyId": 20,
+    "photo": "/images/properties/937-4th-ct-w.jpg",
+    "address": "937 4th Ct W",
+    "location": "Birmingham, AL 35204",
     "status": "current",
-    "cockpitAddress": null
+    "cockpitAddress": "937 4th Ct W"
   },
   {
-    "id": "portfolio-home-15",
-    "photo": "/images/portfolio-15.png",
-    "address": null,
-    "location": null,
+    "id": "1535-45th-street",
+    "propertyId": 21,
+    "photo": "/images/properties/1535-45th-street.jpg",
+    "address": "1535 45th Street",
+    "location": "Birmingham, AL 35208",
     "status": "current",
-    "cockpitAddress": null
+    "cockpitAddress": "1535 45th Street"
   },
   {
-    "id": "portfolio-home-16",
-    "photo": "/images/portfolio-16.png",
-    "address": null,
-    "location": null,
+    "id": "4637-terrace-s",
+    "propertyId": 22,
+    "photo": "/images/properties/4637-terrace-s.jpg",
+    "address": "4637 Terrace S",
+    "location": "Birmingham, AL 35208",
     "status": "current",
-    "cockpitAddress": null
+    "cockpitAddress": "4637 Terrace S"
   },
   {
-    "id": "portfolio-home-17",
-    "photo": "/images/portfolio-17.png",
-    "address": null,
-    "location": null,
+    "id": "937-mason-ave-sw",
+    "propertyId": 23,
+    "photo": "/images/properties/937-mason-ave-sw.jpg",
+    "address": "937 Mason Ave SW",
+    "location": "Birmingham, AL 35211",
     "status": "current",
-    "cockpitAddress": null
+    "cockpitAddress": "937 Mason Ave SW"
   },
   {
-    "id": "portfolio-home-18",
-    "photo": "/images/portfolio-18.png",
-    "address": null,
-    "location": null,
+    "id": "4301-greenwood-street",
+    "propertyId": 24,
+    "photo": "/images/properties/4301-greenwood-street.jpg",
+    "address": "4301 Greenwood Street",
+    "location": "Birmingham, AL 35217",
     "status": "current",
-    "cockpitAddress": null
+    "cockpitAddress": "4301 Greenwood Street"
   },
   {
-    "id": "portfolio-home-19",
-    "photo": "/images/portfolio-19.png",
-    "address": null,
-    "location": null,
+    "id": "1000-46th-street-ensley",
+    "propertyId": 25,
+    "photo": "/images/properties/1000-46th-street-ensley.jpg",
+    "address": "1000 46th Street Ensley",
+    "location": "Birmingham, AL 35208",
     "status": "current",
-    "cockpitAddress": null
+    "cockpitAddress": "1000 46th Street Ensley"
   },
   {
-    "id": "portfolio-home-20",
-    "photo": "/images/portfolio-20.png",
-    "address": null,
-    "location": null,
+    "id": "5225-avenue-q",
+    "propertyId": 26,
+    "photo": "/images/properties/5225-avenue-q.jpg",
+    "address": "5225 Avenue Q",
+    "location": "Birmingham, AL 35208",
     "status": "current",
-    "cockpitAddress": null
+    "cockpitAddress": "5225 Avenue Q"
   },
   {
-    "id": "portfolio-home-21",
-    "photo": "/images/portfolio-21.png",
-    "address": null,
-    "location": null,
+    "id": "1632-alabama-ave",
+    "propertyId": 27,
+    "photo": "/images/properties/1632-alabama-ave.jpg",
+    "address": "1632 Alabama Ave",
+    "location": "Birmingham, AL 35211",
     "status": "current",
-    "cockpitAddress": null
+    "cockpitAddress": "1632 Alabama Ave"
   },
   {
-    "id": "portfolio-home-22",
-    "photo": "/images/portfolio-22.png",
-    "address": null,
-    "location": null,
+    "id": "6125-avenue-o",
+    "propertyId": 28,
+    "photo": "/images/properties/6125-avenue-o.jpg",
+    "address": "6125 Avenue O",
+    "location": "Birmingham, AL 35228",
     "status": "current",
-    "cockpitAddress": null
+    "cockpitAddress": "6125 Avenue O"
   },
   {
-    "id": "portfolio-home-23",
-    "photo": "/images/portfolio-23.png",
-    "address": null,
-    "location": null,
+    "id": "248-mccormick",
+    "propertyId": 29,
+    "photo": "/images/properties/248-mccormick.jpg",
+    "address": "248 McCormick",
+    "location": "Birmingham, AL 35215",
     "status": "current",
-    "cockpitAddress": null
+    "cockpitAddress": "248 McCormick"
   },
   {
-    "id": "portfolio-home-24",
-    "photo": "/images/portfolio-24.png",
-    "address": null,
-    "location": null,
+    "id": "1000-12th-street",
+    "propertyId": 30,
+    "photo": "/images/properties/1000-12th-street.jpg",
+    "address": "1000 12th Street",
+    "location": "Midfield, AL 35228",
     "status": "current",
-    "cockpitAddress": null
+    "cockpitAddress": "1000 12th Street (Midfield)"
   },
   {
-    "id": "portfolio-home-25",
-    "photo": "/images/portfolio-25.png",
-    "address": null,
-    "location": null,
+    "id": "1724-horn",
+    "propertyId": 31,
+    "photo": "/images/properties/1724-horn.jpg",
+    "address": "1724 Horn",
+    "location": "Birmingham, AL 35214",
     "status": "current",
-    "cockpitAddress": null
+    "cockpitAddress": "1724 Horn"
   },
   {
-    "id": "portfolio-home-26",
-    "photo": "/images/portfolio-26.png",
-    "address": null,
-    "location": null,
+    "id": "112-9th-street",
+    "propertyId": 32,
+    "photo": "/images/properties/112-9th-street.jpg",
+    "address": "112 9th Street",
+    "location": "Midfield, AL 35228",
     "status": "current",
-    "cockpitAddress": null
+    "cockpitAddress": "112 9th Street (Midfield)"
   },
   {
-    "id": "portfolio-home-27",
-    "photo": "/images/portfolio-27.png",
-    "address": null,
-    "location": null,
+    "id": "115-vann-street",
+    "propertyId": 33,
+    "photo": "/images/properties/115-vann-street.jpg",
+    "address": "115 Vann Street",
+    "location": "Midfield, AL 35228",
     "status": "current",
-    "cockpitAddress": null
+    "cockpitAddress": "115 Vann Street (Midfield)"
   },
   {
-    "id": "portfolio-home-28",
-    "photo": "/images/portfolio-28.png",
-    "address": null,
-    "location": null,
+    "id": "1521-cherry-avenue",
+    "propertyId": 34,
+    "photo": "/images/properties/1521-cherry-avenue.jpg",
+    "address": "1521 Cherry Avenue",
+    "location": "Forestdale, AL 35214",
     "status": "current",
-    "cockpitAddress": null
+    "cockpitAddress": "1521 Cherry Avenue (Forestdale)"
   },
   {
-    "id": "portfolio-home-29",
-    "photo": "/images/portfolio-29.png",
-    "address": null,
-    "location": null,
+    "id": "336-birwood-avenue",
+    "propertyId": 35,
+    "photo": "/images/properties/336-birwood-avenue.jpg",
+    "address": "336 Birwood Avenue",
+    "location": "Midfield, AL 35228",
     "status": "current",
-    "cockpitAddress": null
+    "cockpitAddress": "336 Birwood Avenue (Midfield)"
   },
   {
-    "id": "portfolio-home-30",
-    "photo": "/images/portfolio-30.png",
-    "address": null,
-    "location": null,
+    "id": "1505-collier-drive",
+    "propertyId": 36,
+    "photo": "/images/properties/1505-collier-drive.jpg",
+    "address": "1505 Collier Drive",
+    "location": "Midfield, AL 35228",
     "status": "current",
-    "cockpitAddress": null
+    "cockpitAddress": "1505 Collier Drive (Midfield)"
   },
   {
-    "id": "portfolio-home-31",
-    "photo": "/images/portfolio-31.png",
-    "address": null,
-    "location": null,
+    "id": "1500-cherry-avenue",
+    "propertyId": 37,
+    "photo": "/images/properties/1500-cherry-avenue.jpg",
+    "address": "1500 Cherry Avenue",
+    "location": "Forestdale, AL 35214",
     "status": "current",
-    "cockpitAddress": null
+    "cockpitAddress": "1500 Cherry Avenue (Forestdale)"
   },
   {
-    "id": "portfolio-home-32",
-    "photo": "/images/portfolio-32.png",
-    "address": null,
-    "location": null,
+    "id": "4401-avenue-i",
+    "propertyId": 38,
+    "photo": "/images/properties/4401-avenue-i.jpg",
+    "address": "4401 Avenue I",
+    "location": "Birmingham, AL 35208",
     "status": "current",
-    "cockpitAddress": null
-  },
-  {
-    "id": "portfolio-home-33",
-    "photo": "/images/portfolio-33.png",
-    "address": null,
-    "location": null,
-    "status": "current",
-    "cockpitAddress": null
-  },
-  {
-    "id": "portfolio-home-34",
-    "photo": "/images/portfolio-34.png",
-    "address": null,
-    "location": null,
-    "status": "current",
-    "cockpitAddress": null
-  },
-  {
-    "id": "portfolio-home-35",
-    "photo": "/images/portfolio-35.png",
-    "address": null,
-    "location": null,
-    "status": "current",
-    "cockpitAddress": null
-  },
-  {
-    "id": "portfolio-home-36",
-    "photo": "/images/portfolio-36.png",
-    "address": null,
-    "location": null,
-    "status": "current",
-    "cockpitAddress": null
-  },
-  {
-    "id": "portfolio-home-37",
-    "photo": "/images/home-01.png",
-    "address": null,
-    "location": null,
-    "status": "sold",
-    "cockpitAddress": null
+    "cockpitAddress": "4401 Avenue I"
   }
 ]

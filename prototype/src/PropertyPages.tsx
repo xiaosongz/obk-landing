@@ -19,7 +19,6 @@ import {
 } from "@ant-design/icons";
 import { financialLines, portfolioProperties } from "./site-data";
 import type { PortfolioProperty } from "./site-data";
-import { reference } from "./reference-content";
 
 const notProvided = <span className="pending">Not provided</span>;
 
@@ -36,7 +35,7 @@ function PropertyCards({ properties }: { properties: PortfolioProperty[] }) {
               src={p.image}
               alt={
                 p.addressProvided
-                  ? `Source property photograph for ${p.name}`
+                  ? `Photograph of ${p.name}`
                   : p.name
               }
               loading="lazy"
@@ -44,9 +43,7 @@ function PropertyCards({ properties }: { properties: PortfolioProperty[] }) {
           </Link>
           <div className="property-card-content">
             <Tag>
-              {p.sold
-                ? "Sold · source template"
-                : "Current portfolio · source template"}
+              {p.sold ? "Sold" : "Current portfolio"}
             </Tag>
             <h3>
               <Link to={`/property-performance/${p.id}`}>{p.name}</Link>
@@ -75,7 +72,7 @@ export function PropertyDirectory() {
         <p className="eyebrow">OBELISK FUND III · PROPERTY PERFORMANCE</p>
         <h1>The properties.</h1>
         <p className="page-intro">
-          Explore the homes in the source portfolio, then open a property for
+          Explore the homes in the Fund III portfolio, then open a property for
           asset, lease, and financial reporting.
         </p>
       </div>
@@ -94,14 +91,16 @@ export function PropertyDirectory() {
       {matches.length === 0 && (
         <Alert title="No properties match your search" type="info" showIcon />
       )}
-      <section className="section-space">
-        <h2 className="standalone-heading">Sold properties</h2>
-        <PropertyCards properties={matches.filter((p) => p.sold)} />
-      </section>
+      {matches.some((p) => p.sold) && (
+        <section className="section-space">
+          <h2 className="standalone-heading">Sold properties</h2>
+          <PropertyCards properties={matches.filter((p) => p.sold)} />
+        </section>
+      )}
       <p className="source-note">
-        Current/sold grouping follows the source template. Four current entries
-        include addresses; the remaining captions and all operating data await
-        completion. Photos are not assigned to invented financial records.
+        Each photograph is linked to its recorded address. Operating and
+        financial data for each home await the approved reporting source; no
+        value is shown as zero when it has not been reported.
       </p>
     </>
   );
@@ -158,7 +157,7 @@ export function PropertyDetail() {
         <Button href="#/property-performance">Return to properties</Button>
       </div>
     );
-  const isSourceDetail = property.id === "2-4401-avenue-i";
+  const isSourceDetail = property.id === "4401-avenue-i";
   const fields = (labels: string[]) =>
     labels.map((label) => ({ key: label, label, children: notProvided }));
   return (
@@ -188,12 +187,8 @@ export function PropertyDetail() {
       </div>
       <div className="property-summary">
         <Image
-          src={
-            isSourceDetail
-              ? reference.photos["property-detail"][0]
-              : property.image
-          }
-          alt={`Source photograph for ${property.name}`}
+          src={property.image}
+          alt={`Photograph of ${property.name}`}
         />
         <div>
           <p className="eyebrow">PERFORMANCE AT A GLANCE</p>
@@ -204,9 +199,7 @@ export function PropertyDetail() {
               {
                 key: "status",
                 label: "Status",
-                children: property.sold
-                  ? "Sold property · source template"
-                  : "Current portfolio · source template",
+                children: property.sold ? "Sold property" : "Current portfolio",
               },
               ...fields([
                 "Current occupancy",
@@ -264,7 +257,7 @@ export function PropertyDetail() {
               key: "owner",
               label: "Owner",
               children: isSourceDetail
-                ? "Obelisk Fund III LLC · source template"
+                ? "Obelisk Fund III LLC"
                 : notProvided,
             },
           ]}

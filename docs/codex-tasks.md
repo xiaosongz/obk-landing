@@ -5,8 +5,10 @@ Owner instructions recorded 2026-09-06. Implement in `prototype/`.
 **Status 2026-09-06:** both tasks implemented on `feat/investor-portal-prototype`
 (commits `1559304`, `54137f6`, and the demo-readiness follow-up). The Fund III tab
 is driven by a read-only export of the cockpit database; see `prototype/README.md`.
-Open owner inputs: photo-to-address matches for 33 photographs, a dedicated LP
-reader role, and an approved source for the four non-derivable summary measures.
+All 38 photographs are now matched to database records from the owner's address-named
+photo library. Funds I and II merged into Fund III, so the export covers every current
+home. Open owner inputs: confirm 328 vs 329 Valley Crest, a dedicated LP reader role,
+and an approved source for the four non-derivable summary measures.
 
 ## 1. Portfolio tab and Fund III Portfolio tab: consistent photos and addresses
 

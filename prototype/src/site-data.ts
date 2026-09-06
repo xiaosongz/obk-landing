@@ -12,6 +12,7 @@ export const navigation = [
 
 export interface PortfolioProperty {
   id: string;
+  propertyId: number | null;
   name: string;
   location: string | null;
   image: string;
@@ -19,11 +20,14 @@ export interface PortfolioProperty {
   addressProvided: boolean;
 }
 
-// The explicit mapping is the only ordered property/photo source for all tabs.
-// Source-template status is historical, not a current database classification.
+// The explicit mapping is the only property/photo source for all tabs. Each
+// photograph comes from the owner's address-named photo library and is linked
+// to its database record through `cockpitAddress`. Following the merger of
+// Funds I and II into Fund III, every current home belongs to Fund III.
 export const portfolioProperties: PortfolioProperty[] = propertyMapping.map(
   (p) => ({
     id: p.id,
+    propertyId: p.propertyId,
     name: p.address ?? "Unlabeled property",
     location: p.location,
     image: p.photo,

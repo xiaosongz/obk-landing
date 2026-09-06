@@ -1,5 +1,10 @@
 -- Run only through export-fund-iii.mjs in a read-only transaction.
 -- No GP API, tenants, investors, transactions, or SELECT *.
+--
+-- Funds I and II merged into Fund III (owner confirmation, 2026-09-06). The
+-- database's properties.fund_id still records the original acquisition vehicle,
+-- so the LP portfolio is every current property regardless of that column.
+-- Terminated acquisitions and synthetic IDs (>= 9001) are excluded.
 SELECT json_build_object(
   'fundCount', (SELECT count(*) FROM public.funds WHERE fund_name = 'Fund III'),
   'properties', COALESCE((
@@ -13,9 +18,7 @@ SELECT json_build_object(
       'totalCapitalization', p.total_capitalization
     ) ORDER BY p.address, p.property_id)
     FROM public.properties p
-    JOIN public.funds f ON f.fund_id = p.fund_id
-    WHERE f.fund_name = 'Fund III'
-      AND p.status IS DISTINCT FROM 'Acquisition Terminated'
+    WHERE p.status IS DISTINCT FROM 'Acquisition Terminated'
       AND p.property_id < 9001
   ), '[]'::json)
 );
@@ -36,9 +39,7 @@ WITH fund AS (
   SELECT count(*) AS total,
          count(*) FILTER (WHERE p.status = 'Rented') AS occupied
   FROM public.properties p
-  JOIN public.funds f ON f.fund_id = p.fund_id
-  WHERE f.fund_name = 'Fund III'
-    AND p.status IS DISTINCT FROM 'Acquisition Terminated'
+  WHERE p.status IS DISTINCT FROM 'Acquisition Terminated'
     AND p.property_id < 9001
 )
 SELECT json_build_array(

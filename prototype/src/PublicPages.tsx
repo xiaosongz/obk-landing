@@ -155,10 +155,7 @@ export function PortfolioPage() {
         </p>
       </div>
       <div className="gallery-toolbar">
-        <p>
-          {portfolioProperties.length} photographs from the partner’s portfolio
-          showcase
-        </p>
+        <p>{portfolioProperties.length} homes in the Fund III portfolio</p>
         <Button href="#/investor-login">
           See property performance details <ArrowRightOutlined />
         </Button>
@@ -181,20 +178,16 @@ export function PortfolioPage() {
                   {property.name}
                   <small>{property.location ?? "Address unconfirmed"}</small>
                 </span>
-                <span>
-                  {property.sold
-                    ? "Sold · source template"
-                    : "Current · source template"}
-                </span>
+                <span>{property.sold ? "Sold" : "Current"}</span>
               </figcaption>
             </figure>
           ))}
         </div>
       </Image.PreviewGroup>
       <p className="source-note">
-        Photography and current/sold labels follow the supplied source template.
-        Unconfirmed photo addresses remain unlabeled; these labels do not verify
-        current ownership.
+        Photographs are from Obelisk’s property library and are labeled with
+        each home’s recorded address. Operating data is available to investors
+        through the investor portal.
       </p>
     </>
   );

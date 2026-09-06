@@ -203,7 +203,7 @@ test("CLI passes read-only SQL, writes atomically outside the repo, and preserve
       fake,
       `#!/usr/bin/env node
 let sql=''; process.stdin.on('data', chunk => sql+=chunk); process.stdin.on('end', () => {
- if(!sql.includes('REPEATABLE READ READ ONLY') || !sql.includes("f.fund_name = 'Fund III'") || !sql.includes('ROLLBACK;') || !process.argv.includes('-w') || process.env.PGOPTIONS !== '-c default_transaction_read_only=on') process.exit(2);
+ if(!sql.includes('REPEATABLE READ READ ONLY') || !sql.includes("fund_name = 'Fund III'") || !sql.includes("Acquisition Terminated") || !sql.includes('ROLLBACK;') || !process.argv.includes('-w') || process.env.PGOPTIONS !== '-c default_transaction_read_only=on') process.exit(2);
  console.log(process.env.TEST_REJECT ? 'rejected-role' : 'lp-read-only');
  console.log(${JSON.stringify(JSON.stringify(directory))}); console.log('null');
 });`,

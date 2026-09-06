@@ -25,15 +25,14 @@ Open [http://127.0.0.1:8766/](http://127.0.0.1:8766/). The server binds only to 
 | Investor Home | `#/investor-home` | Investor-relations contact, both fund links, all subscription/capital/preferred-return/promote field groups, legal-document placeholder, original process overview and six illustrated process sections |
 | Fund III Portfolio | `#/fund-iii-portfolio` | All six summary measures, Buy/Rehab/Rent/Refinance/Repeat stages, searchable acquisition directory, stabilized and stabilizing reporting layouts, manager-note areas |
 | Property Performance | `#/property-performance` | Source current/sold property gallery and routes to property details |
-| Property detail | `#/property-performance/2-4401-avenue-i` | Source property photo, performance-at-a-glance fields, asset overview, lease, T-12 and cumulative financial layouts, calculation rules, original map |
+| Property detail | `#/property-performance/4401-avenue-i` | Source property photo, performance-at-a-glance fields, asset overview, lease, T-12 and cumulative financial layouts, calculation rules, original map |
 
 The full business-process copy is retained in expandable reading sections. Illustrations can be opened at full size. The first property’s detailed-page photograph takes precedence over the directory’s generic placeholder photograph.
 
 ## Content and data boundaries
 
-- Curated business copy and images are in `src/reference-content.ts` and `public/images/`. Seven reference pages were saved through the authenticated browser outside this public repository; they include six top-level pages and the one linked property-detail template. This is not a complete Takeout archive.
-- The portfolio showcase has 37 photographs. The separate property-performance directory has 36 current-image entries and one sold-image entry. These are source-page counts, not verified fund metrics.
-- Only four current entries have source addresses. Other captions explicitly say “Unlabeled property” and do not imply database IDs. Operating stage, lease, financial values, and reporting dates are not inferred from photographs.
+- Curated business copy and process illustrations are in `src/reference-content.ts` and `public/images/`. Property photographs are in `public/images/properties/`, one per home, converted to 1600px JPEG from the owner's address-named photo library (shared drive `OBK Portal/Property Photos`). `src/property-mapping.json` links each photograph to its database record by address and property ID.
+- Funds I and II merged into Fund III; every current home is Fund III. The database's per-property fund column is the historical acquisition vehicle and is not shown to investors. One photo file (named 328 Valley Crest) was matched by street name to the database address 329 Valley Crest Drive; the owner should confirm which number is correct.
 - The investor account uses a fictional identity and illustrative capital amounts. Preferred-return/promote values and property financial cells remain unfilled. No personal investor record, tenant record, legal agreement, or screenshot financial table is imported.
 - The source login page was blank. The featured-video slot and subscription-agreement link had no supplied content. These omissions are labeled rather than filled with invented material.
 - Production must use authenticated server-side investor/fund authorization and the existing cockpit’s approved financial read models. Source narrative definitions need reconciliation with those models before displaying calculated results.
@@ -48,14 +47,14 @@ Validation: TypeScript and production build pass. Browser checks covered all six
 
 ## Canonical property/photo mapping
 
-Edit `src/property-mapping.json`: one explicit row per source-directory property,
-shared by the public Portfolio, Fund III Portfolio, and property-detail routes.
-`photo` is the local image path; `address` and `location` are confirmed source
-captions or `null`. Keep `id` stable so existing report links continue to work.
-`status` preserves the source template's `current`/`sold` grouping, not live
-ownership. Do not derive status, fund membership, or an address from image order.
-`cockpitAddress` is reserved for an owner-confirmed exact database address match;
-leave it `null` until verified. It never supplies a photo address by itself.
+`src/property-mapping.json` has one row per home, shared by the public Portfolio,
+Fund III Portfolio, and property-detail routes. `photo` is the local image path
+under `public/images/properties/`; `address` and `location` are display values
+derived from the database address; `propertyId` and `cockpitAddress` are the
+exact database record the photograph belongs to, and the Fund III table joins on
+`cockpitAddress`. Keep `id` stable so report links continue to work. `status` is
+`current` for every home today; the database records no sales. When a home is
+added, add its photograph to the shared-drive library, convert it, and add a row.
 
 Four existing captions are retained; 33 properties remain explicitly unlabeled.
 The first property's confirmed detailed-page photo is now used in both tabs.
@@ -70,7 +69,7 @@ an address match. There are no longer separately maintained portfolio photo arra
 
 The LP prototype never calls the GP cockpit API or uses a GP session. A small
 Node exporter runs `psql` through an explicitly configured **dedicated read-only
-libpq service**, filters by `funds.fund_name = 'Fund III'`, validates an exact LP
+libpq service**, selects every current property (Funds I and II merged into Fund III), validates an exact LP
 field allowlist, and atomically writes a mode-0600 JSON snapshot **outside this
 repository**. No snapshot, credential, or connection setting is bundled by the
 production build. The Vite dev/preview server exposes the validated file at
@@ -113,8 +112,8 @@ prints a warning. Do not use the override outside local demos.
 If the owner supplies a `public.lp_fund_iii_summary` view (`fund_name`,
 `as_of_date`, `metric`, `state`, `value`) it is authoritative. Otherwise the
 export reports only what property status supports: occupied homes is the count
-of Fund III homes whose status is `Rented`, and occupancy is that count divided
-by homes in the fund. Capital recycling, stabilized homes, stabilization rate,
+of homes whose status is `Rented`, and occupancy is that count divided by all
+current homes. Capital recycling, stabilized homes, stabilization rate,
 and refinance pipeline remain "Not yet reported" until an approved source
 exists. The as-of date is the export date because the database records no
 status date.

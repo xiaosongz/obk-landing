@@ -179,7 +179,7 @@ export default function FundPortfolio() {
                   ? "The Fund III report could not be loaded"
                   : "Fund III report not yet supplied"
             }
-            description="The photographs below are the source directory; Fund III membership and financial values are unverified until a report is available."
+            description="The photographs below are the property directory; status and financial values appear once the database export is available."
           />
         )}
         <div className="fund-metrics">
@@ -267,7 +267,7 @@ export default function FundPortfolio() {
             dataSource={current}
             scroll={{ x: 1250 }}
             pagination={{
-              pageSize: 6,
+              pageSize: 10,
               showSizeChanger: false,
               showTotal: (total) =>
                 `${total} ${report.data ? "Fund III properties" : "source directory entries"}`,
@@ -275,11 +275,10 @@ export default function FundPortfolio() {
           />
           <p className="source-note">
             {report.data
-              ? "Only properties assigned to Fund III in the export appear here. Acquisition cost is purchase price; total cost is reported capitalization, not an inferred sum. Sold properties remain acquisition history."
-              : "This source photo directory does not establish Fund III membership."}{" "}
-            Both tabs share the canonical photo mapping. Database properties
-            without an explicit photo match show “Photo unconfirmed”; no photo
-            is assigned by row order.
+              ? "Following the merger of Funds I and II into Fund III, every current home in the portfolio database appears here. Acquisition cost is purchase price; total cost is reported capitalization, not an inferred sum."
+              : "This photo directory is shown until the database export is available."}{" "}
+            Photographs are linked to database records by recorded address;
+            a home without a confirmed photograph shows a placeholder.
           </p>
           {note(
             "Acquisitions, dispositions & capital returned",
