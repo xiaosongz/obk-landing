@@ -7,8 +7,8 @@ Owner instructions recorded 2026-09-06. Implement in `prototype/`.
 export of the cockpit database; see `prototype/README.md`. All 38 photographs are
 matched to database records. Funds I and II merged into Fund III, so the export covers
 every current home. Task 3 (below) is implemented: the export reads the cockpit's
-merger-model cost basis and emits a sourced fund-level snapshot (schema v2). Open owner inputs: confirm
-328 vs 329 Valley Crest, a dedicated LP reader role.
+merger-model cost basis and emits a sourced fund-level snapshot (schema v2). **Task 4 (below) is open:** move the website's data into its own snapshot
+database. Open owner input: confirm 328 vs 329 Valley Crest.
 
 ## 1. Portfolio tab and Fund III Portfolio tab: consistent photos and addresses
 
@@ -139,6 +139,74 @@ real figures, instead of "Report pending" / "Not yet reported" cells.
 6. Do not run the exporter against a database, and do not commit any JSON snapshot.
    The owner runs `npm run export:fund-iii` and redeploys. `npm run build`,
    `npm run test:fund-data` and `npm run check:worker` must pass.
+
+## 4. Snapshot database for the website (`obk_lp`)
+
+Owner decision 2026-09-06: the website must read from its own minimal snapshot
+database that holds only the information the site needs, never from the cockpit
+database. A GP-side job copies the allowlisted data into it; the site (and later the
+per-investor dashboards) read only the snapshot database. Nothing should wait on a
+cockpit read-only role for the website.
+
+### Infrastructure already in place (do not touch, do not connect)
+
+- Postgres database `obk_lp` exists on the same server as the cockpit, empty, owned by
+  login role `obk_lp`, which cannot connect to `obk`, `obk_test`, `obk_app` or
+  `obk_pipeline`. The owner keeps its connection settings in the gitignored file
+  `prototype/.env.lp-snapshot` (standard `PGHOST`, `PGPORT`, `PGUSER`, `PGDATABASE`,
+  `PGPASSWORD`). Never read that file, never print it, never commit anything like it.
+- The cockpit already has a read-only role `obk_reader` with SELECT on `public` and
+  `obk_merger` (cockpit `deploy/DEPLOYMENT.md`). The load job runs with that kind of
+  role; the existing role gate in the exporter already accepts it.
+
+### Required outcome
+
+1. `scripts/lp-snapshot-schema.sql` — idempotent DDL for `obk_lp` (run by the owner with
+   `psql -f`): tables `fund_snapshots` (`snapshot_id bigserial`, `fund_name`,
+   `exported_at timestamptz`, `summary_as_of date`, `source_label text`,
+   `loaded_at timestamptz default now()`), `fund_snapshot_metrics` (`snapshot_id`,
+   `metric text`, `state text check in (reported, missing, not_reported)`,
+   `value_number numeric`, `value_date date`, PK (snapshot_id, metric)), and
+   `fund_snapshot_properties` (`snapshot_id`, `property_id`, `address`, `status`,
+   `purchase_date`, `purchase_price`, `renovation_cost`, `total_capitalization`,
+   `cost_from_merger_model boolean`, PK (snapshot_id, property_id)). Add a view
+   `fund_snapshot_latest` (the newest snapshot per fund) and a plpgsql function
+   `load_fund_snapshot(payload jsonb) RETURNS bigint` that checks the payload has
+   exactly the v2 keys and inserts one snapshot atomically. Put a comment block at
+   the top stating the allowlist and that investor-account tables come later.
+   Column set must equal the v2 snapshot schema in `src/fund-data.ts`, nothing more.
+2. Split `scripts/export-fund-iii.mjs` into:
+   - `scripts/lp-snapshot-lib.mjs` — shared helpers (psql runner with the existing
+     read-only transaction + role gate, `makeSnapshot`, the atomic file writer,
+     destination rules).
+   - `scripts/lp-snapshot-load.mjs` — reads the cockpit through `scripts/fund-iii.sql`
+     exactly as today (source connection from `OBK_COCKPIT_PGHOST`, `OBK_COCKPIT_PGPORT`,
+     `OBK_COCKPIT_PGUSER`, `OBK_COCKPIT_PGDATABASE`, `OBK_COCKPIT_PGPASSWORD`, mapped
+     onto the psql child's `PG*` environment; or `OBK_COCKPIT_PGSERVICE`), validates
+     it with `parseFundSnapshot`, then inserts it into the snapshot database
+     (target connection = the process's own `PG*` variables) with
+     `SELECT load_fund_snapshot($<tag>$ ... $<tag>$::jsonb)` using a random dollar-quote
+     tag that is asserted absent from the payload. Prints the new `snapshot_id`.
+     Keep `OBK_LP_ALLOW_ADMIN_ROLE` for the source connection only, with its warning.
+   - `scripts/lp-snapshot-publish.mjs` — connects to the snapshot database only (`PG*`),
+     rebuilds the v2 JSON from the tables with SQL `json_build_object` (tables are the
+     truth; do not store or reuse the raw payload), validates it with
+     `parseFundSnapshot`, and writes `OBK_LP_DATA_FILE` with the existing atomic
+     write and path rules. Also gate this connection: refuse superusers and any role
+     with INSERT/UPDATE/DELETE on the three tables is fine here (the owner role writes),
+     but require a READ ONLY transaction.
+   Package scripts: `snapshot:load`, `snapshot:publish`; drop `export:fund-iii`.
+3. Tests (`tests/fund-data.test.mjs`): move the `makeSnapshot` import to the lib; keep
+   the destination-rule and route tests against the publish script; add a unit test
+   that the dollar-tag guard rejects a payload containing the tag; add a test that the
+   schema SQL and `fund-data.ts` name the same property and metric fields (parse the
+   DDL text, no database). Keep the fail-closed behaviour.
+4. `README.md`: replace the export instructions with a "Snapshot database" section:
+   one-time schema apply, the two-step run (load with cockpit read-only credentials,
+   publish with `.env.lp-snapshot`), and a table of the `obk_lp` tables. State plainly
+   that the website never connects to the cockpit database.
+5. Do not connect to any database. `npm run build`, `npm run test:fund-data` and
+   `npm run check:worker` must pass.
 
 ## Process
 
