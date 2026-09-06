@@ -10,7 +10,11 @@ import {
 import { Link } from "react-router-dom";
 import { currency, fundMetrics, portfolioProperties } from "./site-data";
 import propertyMapping from "./property-mapping.json";
-import { formatMetric, matchPropertyPhoto } from "./fund-data";
+import {
+  formatMetric,
+  formatReportDate,
+  matchPropertyPhoto,
+} from "./fund-data";
 import type { FundProperty } from "./fund-data";
 import { useFundSnapshot } from "./useFundSnapshot";
 import type { PortfolioProperty } from "./site-data";
@@ -130,7 +134,9 @@ export default function FundPortfolio() {
       title: "Report",
       key: "details",
       render: (_, p) =>
-        p.photo ? (
+        p.data?.costFromMergerModel === false ? (
+          <small className="pending">cost basis pending</small>
+        ) : p.photo ? (
           <Link
             aria-label={`View ${p.name} report`}
             to={`/property-performance/${p.photo.id}`}
@@ -212,16 +218,32 @@ export default function FundPortfolio() {
                 )}
               </strong>
               <small>
-                {report.data?.summaryAsOf
-                  ? `As of ${report.data.summaryAsOf}`
-                  : "Reporting date not supplied"}
+                {metric.key === "totalAcquisitionCost"
+                  ? "Purchase price including closing costs"
+                  : metric.key.startsWith("ttm")
+                    ? "Trailing twelve months"
+                    : report.data?.summaryAsOf
+                      ? `Snapshot as of ${report.data.summaryAsOf}`
+                      : "Reporting date not supplied"}
               </small>
             </div>
           ))}
         </div>
+        {report.data && (
+          <p className="source-note">
+            TTM window: {formatReportDate(report.data.summary.ttmPeriodStart)}
+            {" → "}
+            {formatReportDate(report.data.summary.ttmPeriodEnd)}. Cost as of:{" "}
+            {formatReportDate(report.data.summary.costAsOf)}.
+          </p>
+        )}
+        <p className="source-note">
+          Capital recycling rate, stabilized homes, stabilization rate, and
+          refinance pipeline await an approved source.
+        </p>
         <p className="source-note">
           {report.data
-            ? `Exported ${new Date(report.data.exportedAt).toLocaleString()} from the portfolio database. Occupied homes and occupancy are derived from each home's recorded status; the remaining measures await an approved summary source.`
+            ? `Exported ${new Date(report.data.exportedAt).toLocaleString()} from the portfolio database. Occupied homes and occupancy use recorded property status at export. Costs use the merger model with legacy fallback where cost basis is pending; TTM totals sum available model values, so homes without TTM data do not contribute operating figures.`
             : "No financial snapshot is available."}{" "}
           Zero is a reported value; “Missing” means the source lacks a value;
           “Not yet reported” means no approved report has supplied it. Photo
@@ -275,10 +297,10 @@ export default function FundPortfolio() {
           />
           <p className="source-note">
             {report.data
-              ? "Following the merger of Funds I and II into Fund III, every current home in the portfolio database appears here. Acquisition cost is purchase price; total cost is reported capitalization, not an inferred sum."
+              ? "Following the merger of Funds I and II into Fund III, every current home in the portfolio database appears here. Acquisition cost is purchase price including closing costs from the merger model; rows with a legacy cost basis are marked pending. Total cost is reported capitalization."
               : "This photo directory is shown until the database export is available."}{" "}
-            Photographs are linked to database records by recorded address;
-            a home without a confirmed photograph shows a placeholder.
+            Photographs are linked to database records by recorded address; a
+            home without a confirmed photograph shows a placeholder.
           </p>
           {note(
             "Acquisitions, dispositions & capital returned",

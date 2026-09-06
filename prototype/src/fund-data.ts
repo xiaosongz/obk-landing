@@ -1,15 +1,20 @@
 // Shared by the browser and the private exporter. No database or identity data here.
 export const metricKeys = [
-  "capital_recycling_rate",
-  "occupied_homes",
+  "homes",
+  "occupiedHomes",
   "occupancy",
-  "stabilized_homes",
-  "stabilization_rate",
-  "refinance_pipeline",
+  "totalAcquisitionCost",
+  "totalRenovationCost",
+  "totalCapitalization",
+  "ttmRentCollected",
+  "ttmNoi",
+  "ttmNoiYield",
+  "ttmCollectionRate",
 ] as const;
+export const dateKeys = ["ttmPeriodStart", "ttmPeriodEnd", "costAsOf"] as const;
 export type MetricKey = (typeof metricKeys)[number];
-export type ReportedValue =
-  | { state: "reported"; value: number }
+export type ReportedValue<T = number> =
+  | { state: "reported"; value: T }
   | { state: "missing" | "not_reported"; value: null };
 export interface FundProperty {
   propertyId: number;
@@ -19,29 +24,52 @@ export interface FundProperty {
   purchasePrice: number | null;
   renovationCost: number | null;
   totalCapitalization: number | null;
+  costFromMergerModel: boolean;
 }
 export interface FundSnapshot {
-  schemaVersion: 1;
+  schemaVersion: 2;
   fundName: "Fund III";
   exportedAt: string;
   summaryAsOf: string | null;
   properties: FundProperty[];
-  summary: Record<MetricKey, ReportedValue>;
+  summary: Record<MetricKey, ReportedValue> &
+    Record<(typeof dateKeys)[number], ReportedValue<string>>;
 }
 
 const percentageKeys = new Set<string>([
-  "capital_recycling_rate",
   "occupancy",
-  "stabilization_rate",
+  "ttmNoiYield",
+  "ttmCollectionRate",
+]);
+const moneyKeys = new Set<string>([
+  "totalAcquisitionCost",
+  "totalRenovationCost",
+  "totalCapitalization",
+  "ttmRentCollected",
+  "ttmNoi",
 ]);
 export function formatMetric(key: MetricKey, metric: ReportedValue): string {
   if (metric.state !== "reported")
     return metric.state === "missing" ? "Missing" : "Not yet reported";
+  if (moneyKeys.has(key))
+    return new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: "USD",
+      maximumFractionDigits: 0,
+    }).format(metric.value);
   return (
     new Intl.NumberFormat("en-US", { maximumFractionDigits: 1 }).format(
       metric.value,
     ) + (percentageKeys.has(key) ? "%" : "")
   );
+}
+
+export function formatReportDate(metric: ReportedValue<string>): string {
+  return metric.state === "reported"
+    ? metric.value
+    : metric.state === "missing"
+      ? "Missing"
+      : "Not yet reported";
 }
 
 function record(value: unknown): Record<string, unknown> {
@@ -85,7 +113,7 @@ export function parseFundSnapshot(input: unknown): FundSnapshot {
     "properties",
     "summary",
   ]);
-  if (data.schemaVersion !== 1 || data.fundName !== "Fund III")
+  if (data.schemaVersion !== 2 || data.fundName !== "Fund III")
     throw new Error("Wrong report or fund");
   if (
     typeof data.exportedAt !== "string" ||
@@ -108,6 +136,7 @@ export function parseFundSnapshot(input: unknown): FundSnapshot {
       "purchasePrice",
       "renovationCost",
       "totalCapitalization",
+      "costFromMergerModel",
     ]);
     if (
       typeof row.propertyId !== "number" ||
@@ -126,6 +155,8 @@ export function parseFundSnapshot(input: unknown): FundSnapshot {
       throw new Error("Invalid property status");
     if (row.purchaseDate !== null && !validDate(row.purchaseDate))
       throw new Error("Invalid acquisition date");
+    if (typeof row.costFromMergerModel !== "boolean")
+      throw new Error("Invalid cost basis source");
     for (const key of [
       "purchasePrice",
       "renovationCost",
@@ -134,22 +165,27 @@ export function parseFundSnapshot(input: unknown): FundSnapshot {
       nullableMoney(row[key]);
   }
   const summary = record(data.summary);
-  exactKeys(summary, metricKeys);
-  for (const key of metricKeys) {
+  exactKeys(summary, [...metricKeys, ...dateKeys]);
+  for (const key of [...metricKeys, ...dateKeys]) {
     const metric = record(summary[key]);
     exactKeys(metric, ["state", "value"]);
     if (metric.state === "reported") {
-      if (
+      if ((dateKeys as readonly string[]).includes(key)) {
+        if (!validDate(metric.value)) throw new Error("Invalid reporting date");
+      } else if (
         typeof metric.value !== "number" ||
         !Number.isFinite(metric.value) ||
         metric.value < 0
       )
         throw new Error("Invalid summary value");
-      if (!percentageKeys.has(key) && !Number.isSafeInteger(metric.value))
+      if (
+        (key === "homes" || key === "occupiedHomes") &&
+        !Number.isSafeInteger(metric.value)
+      )
         throw new Error("Invalid home count");
       if (
-        (key === "occupancy" || key === "stabilization_rate") &&
-        metric.value > 100
+        (key === "occupancy" && (metric.value as number) > 100) ||
+        (key === "ttmCollectionRate" && (metric.value as number) > 200)
       )
         throw new Error("Invalid percentage");
       if (data.summaryAsOf === null)
@@ -160,6 +196,23 @@ export function parseFundSnapshot(input: unknown): FundSnapshot {
     ) {
       throw new Error("Invalid reporting state");
     }
+  }
+  const start = record(summary.ttmPeriodStart);
+  const end = record(summary.ttmPeriodEnd);
+  if (
+    (start.state === "reported") !== (end.state === "reported") ||
+    (start.state === "reported" &&
+      (start.value as string) > (end.value as string))
+  )
+    throw new Error("Invalid TTM window");
+  for (const key of [
+    "ttmRentCollected",
+    "ttmNoi",
+    "ttmNoiYield",
+    "ttmCollectionRate",
+  ]) {
+    if (record(summary[key]).state === "reported" && start.state !== "reported")
+      throw new Error("Reported TTM metrics need a reporting window");
   }
   return data as unknown as FundSnapshot;
 }

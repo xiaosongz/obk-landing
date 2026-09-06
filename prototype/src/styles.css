@@ -610,7 +610,7 @@ figure > figcaption span:first-child {
 }
 .fund-metrics {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   background: white;
   border: 1px solid var(--rule);
 }
@@ -621,8 +621,8 @@ figure > figcaption span:first-child {
   padding: 1.6rem 2rem;
   border-right: 1px solid var(--rule);
 }
-.fund-metrics > div:nth-child(-n + 3) {
-  border-bottom: 1px solid var(--rule);
+.fund-metrics > div:nth-child(n + 4) {
+  border-top: 1px solid var(--rule);
 }
 .fund-metrics > div:nth-child(3n) {
   border-right: 0;
@@ -634,8 +634,9 @@ figure > figcaption span:first-child {
   align-items: center;
 }
 .fund-metrics strong {
+  overflow-wrap: anywhere;
   font:
-    2.5rem "IBM Plex Mono",
+    clamp(1.25rem, 2.6vw, 2.5rem) "IBM Plex Mono",
     monospace;
   color: #8f9c9b;
 }
@@ -1220,7 +1221,7 @@ figure > figcaption span:first-child {
     flex-basis: 45%;
   }
   .fund-metrics {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
   .fund-metrics > div {
     padding: 1.2rem;
@@ -1231,8 +1232,8 @@ figure > figcaption span:first-child {
   .fund-metrics > div:nth-child(2n) {
     border-right: 0;
   }
-  .fund-metrics > div:nth-child(4) {
-    border-bottom: 1px solid var(--rule);
+  .fund-metrics > div:nth-child(n + 3) {
+    border-top: 1px solid var(--rule);
   }
   .stage-jumps {
     flex-wrap: wrap;

@@ -2,40 +2,17 @@ import { execFile } from "node:child_process";
 import { readFile, realpath, open, rename, unlink } from "node:fs/promises";
 import { dirname, basename, resolve, relative, sep } from "node:path";
 import { fileURLToPath } from "node:url";
-import { metricKeys, parseFundSnapshot } from "../src/fund-data.ts";
+import { parseFundSnapshot } from "../src/fund-data.ts";
 
-export function makeSnapshot(
-  directory,
-  rows,
-  exportedAt = new Date().toISOString(),
-) {
-  if (directory.fundCount !== 1)
-    throw new Error("Expected exactly one Fund III row");
-  const summary = Object.fromEntries(
-    metricKeys.map((key) => [key, { state: "not_reported", value: null }]),
-  );
-  let summaryAsOf = null;
-  if (rows !== null) {
-    if (!Array.isArray(rows) || rows.length !== metricKeys.length)
-      throw new Error("Summary view must supply all six metrics");
-    const seen = new Set();
-    for (const row of rows) {
-      if (!metricKeys.includes(row.metric) || seen.has(row.metric))
-        throw new Error("Invalid or duplicate summary metric");
-      if (!row.asOf || (summaryAsOf !== null && row.asOf !== summaryAsOf))
-        throw new Error("Summary periods must agree");
-      seen.add(row.metric);
-      summaryAsOf = row.asOf;
-      summary[row.metric] = { state: row.state, value: row.value };
-    }
-  }
+export function makeSnapshot(result, exportedAt = new Date().toISOString()) {
+  const { fundCount, ...report } = result;
+  if (fundCount !== 1) throw new Error("Expected exactly one Fund III row");
+  // Forward every SQL field to the shared allowlist; never silently strip extras.
   return parseFundSnapshot({
-    schemaVersion: 1,
+    ...report,
+    schemaVersion: 2,
     fundName: "Fund III",
     exportedAt,
-    summaryAsOf,
-    properties: directory.properties,
-    summary,
   });
 }
 
@@ -45,7 +22,10 @@ export async function exportFund() {
   // libpq password file or PGPASSWORD; it is never passed as an argument.
   const explicitConnection =
     process.env.PGHOST && process.env.PGUSER && process.env.PGDATABASE;
-  if ((!process.env.PGSERVICE && !explicitConnection) || !process.env.OBK_LP_DATA_FILE)
+  if (
+    (!process.env.PGSERVICE && !explicitConnection) ||
+    !process.env.OBK_LP_DATA_FILE
+  )
     throw new Error(
       "Configure PGSERVICE (or PGHOST, PGUSER, PGDATABASE) and OBK_LP_DATA_FILE",
     );
@@ -80,6 +60,15 @@ SELECT CASE WHEN EXISTS (
   AND NOT has_table_privilege(current_user, 'public.funds', 'INSERT,UPDATE,DELETE,TRUNCATE,TRIGGER')
   AND NOT has_any_column_privilege(current_user, 'public.properties', 'INSERT,UPDATE')
   AND NOT has_any_column_privilege(current_user, 'public.funds', 'INSERT,UPDATE')
+  AND NOT EXISTS (
+    SELECT 1 FROM (VALUES
+      ('obk_merger.property_capitalization'),
+      ('obk_merger.property_period_metrics'),
+      ('obk_merger.merger_run_log')
+    ) AS sources(table_name)
+    WHERE has_table_privilege(current_user, table_name, 'INSERT,UPDATE,DELETE,TRUNCATE,TRIGGER')
+       OR has_any_column_privilege(current_user, table_name, 'INSERT,UPDATE')
+  )
 THEN 'lp-read-only' ELSE 'rejected-role' END;`;
   // -X ignores psqlrc; -w never prompts; all queries share one read-only snapshot.
   const query = `BEGIN ISOLATION LEVEL REPEATABLE READ READ ONLY;
@@ -107,7 +96,7 @@ ROLLBACK;`;
     child.stdin.end(query);
   });
   const lines = stdout.trim().split(/\r?\n/);
-  if (lines.length !== 3) throw new Error("Unexpected query output");
+  if (lines.length !== 2) throw new Error("Unexpected query output");
   if (lines[0] !== "lp-read-only") {
     if (!allowAdminRole)
       throw new Error("Read-only role or query output rejected");
@@ -115,7 +104,7 @@ ROLLBACK;`;
       "WARNING: exporting with a privileged database role (OBK_LP_ALLOW_ADMIN_ROLE=1). Demo use only; provision a dedicated LP reader for production.",
     );
   }
-  const snapshot = makeSnapshot(JSON.parse(lines[1]), JSON.parse(lines[2]));
+  const snapshot = makeSnapshot(JSON.parse(lines[1]));
   const output = resolve(parent, basename(destination));
   const temporary = `${output}.${process.pid}.tmp`;
   const handle = await open(temporary, "wx", 0o600);

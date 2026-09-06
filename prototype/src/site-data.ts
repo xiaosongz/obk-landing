@@ -65,12 +65,12 @@ export const fundMetrics: {
   definition: string;
 }[] = [
   {
-    key: "capital_recycling_rate",
-    label: "Capital recycling rate",
-    definition: "Capital recycled ÷ initial equity invested × 100%.",
+    key: "homes",
+    label: "Homes",
+    definition: "Homes in the active portfolio.",
   },
   {
-    key: "occupied_homes",
+    key: "occupiedHomes",
     label: "Occupied homes",
     definition:
       "Homes whose recorded status in the portfolio database is Rented.",
@@ -81,21 +81,44 @@ export const fundMetrics: {
     definition: "Occupied homes ÷ homes in the fund × 100%.",
   },
   {
-    key: "stabilized_homes",
-    label: "Stabilized homes",
+    key: "totalAcquisitionCost",
+    label: "Acquisition cost",
     definition:
-      "Count of homes classified as stabilized by the approved reporting model.",
+      "Purchase price including closing costs, from the merger model; legacy values are used where the cost basis is pending.",
   },
   {
-    key: "stabilization_rate",
-    label: "Stabilization rate",
-    definition: "Stabilized homes ÷ total homes × 100%.",
+    key: "totalRenovationCost",
+    label: "Renovation cost",
+    definition:
+      "Total renovation cost from the merger model, with the same legacy fallback.",
   },
   {
-    key: "refinance_pipeline",
-    label: "Refinance pipeline",
+    key: "totalCapitalization",
+    label: "Total capitalization",
     definition:
-      "Homes appraised and ready for long-term debt, as reported by the approved summary source. Not inferred from stabilization.",
+      "Total acquisition and renovation cost from the merger model, with the same legacy fallback.",
+  },
+  {
+    key: "ttmRentCollected",
+    label: "TTM rent collected (EGI)",
+    definition:
+      "Sum of effective gross income collected over the trailing twelve months.",
+  },
+  {
+    key: "ttmNoi",
+    label: "TTM NOI",
+    definition: "Sum of net operating income over the trailing twelve months.",
+  },
+  {
+    key: "ttmNoiYield",
+    label: "TTM NOI yield",
+    definition: "TTM NOI ÷ total capitalization × 100%.",
+  },
+  {
+    key: "ttmCollectionRate",
+    label: "TTM collection rate",
+    definition:
+      "Rent collected ÷ potential rent × 100%. Arrears collected can bring this above 100%; it is separate from occupied-home occupancy.",
   },
 ];
 

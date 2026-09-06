@@ -6,8 +6,8 @@ Owner instructions recorded 2026-09-06. Implement in `prototype/`.
 (commits `1559304`, `54137f6`, `ba4867a`). The Fund III tab is driven by a read-only
 export of the cockpit database; see `prototype/README.md`. All 38 photographs are
 matched to database records. Funds I and II merged into Fund III, so the export covers
-every current home. **Task 3 (below) is open:** switch the export to the cockpit's
-computed cost basis and add a sourced fund-level snapshot. Open owner inputs: confirm
+every current home. Task 3 (below) is implemented: the export reads the cockpit's
+merger-model cost basis and emits a sourced fund-level snapshot (schema v2). Open owner inputs: confirm
 328 vs 329 Valley Crest, a dedicated LP reader role.
 
 ## 1. Portfolio tab and Fund III Portfolio tab: consistent photos and addresses
