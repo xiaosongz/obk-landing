@@ -44,7 +44,7 @@ export default function FundPortfolio() {
           <img src={p.image} alt="" />
           <span>
             {p.name}
-            <small>{p.location ?? "Address not yet provided"}</small>
+            <small>{p.location ?? "Address unconfirmed"}</small>
           </span>
         </Link>
       ),
@@ -178,8 +178,9 @@ export default function FundPortfolio() {
           />
           <p className="source-note">
             This directory preserves the reference’s current-property imagery.
-            Financial cells remain unfilled; portfolio entries without source
-            captions are labeled by image order.
+            Both portfolio tabs use the same photo and address mapping.
+            Unconfirmed addresses remain unlabeled; financial cells await
+            reporting data.
           </p>
           {note(
             "Acquisitions, dispositions & capital returned",

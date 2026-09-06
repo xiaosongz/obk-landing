@@ -2,6 +2,7 @@ import { Button, Image } from "antd";
 import { ArrowRightOutlined, LockOutlined } from "@ant-design/icons";
 import { Link } from "react-router-dom";
 import { reference } from "./reference-content";
+import { portfolioProperties } from "./site-data";
 
 export function HomePage() {
   return (
@@ -155,8 +156,8 @@ export function PortfolioPage() {
       </div>
       <div className="gallery-toolbar">
         <p>
-          {reference.photos.portfolio.length} photographs from the partner’s
-          portfolio showcase
+          {portfolioProperties.length} photographs from the partner’s portfolio
+          showcase
         </p>
         <Button href="#/investor-login">
           See property performance details <ArrowRightOutlined />
@@ -164,24 +165,36 @@ export function PortfolioPage() {
       </div>
       <Image.PreviewGroup>
         <div className="portfolio-gallery">
-          {reference.photos.portfolio.map((src, index) => (
-            <figure key={`${src}-${index}`}>
+          {portfolioProperties.map((property, index) => (
+            <figure key={property.id}>
               <Image
-                src={src}
-                alt={`Home shown in the original Obelisk portfolio gallery, photograph ${index + 1}`}
+                src={property.image}
+                alt={
+                  property.addressProvided
+                    ? `Property at ${property.name}, ${property.location}`
+                    : "Property photograph · address unconfirmed"
+                }
                 loading={index < 3 ? "eager" : "lazy"}
               />
               <figcaption>
-                <span>OBELISK RESIDENTIAL</span>
-                <span>{String(index + 1).padStart(2, "0")}</span>
+                <span>
+                  {property.name}
+                  <small>{property.location ?? "Address unconfirmed"}</small>
+                </span>
+                <span>
+                  {property.sold
+                    ? "Sold · source template"
+                    : "Current · source template"}
+                </span>
               </figcaption>
             </figure>
           ))}
         </div>
       </Image.PreviewGroup>
       <p className="source-note">
-        Photography is from the supplied site. Current ownership and operating
-        status are shown separately in investor reporting.
+        Photography and current/sold labels follow the supplied source template.
+        Unconfirmed photo addresses remain unlabeled; these labels do not verify
+        current ownership.
       </p>
     </>
   );

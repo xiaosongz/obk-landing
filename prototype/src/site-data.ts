@@ -1,4 +1,4 @@
-import { reference } from "./reference-content";
+import propertyMapping from "./property-mapping.json";
 
 export const navigation = [
   { key: "/", label: "Home" },
@@ -18,49 +18,18 @@ export interface PortfolioProperty {
   addressProvided: boolean;
 }
 
-// Only the first four current-property captions are supplied by the source page.
-// Image order is a gallery reference, not a database property identifier.
-const captions = [
-  {
-    id: "2-4401-avenue-i",
-    name: "4401 Avenue I",
-    location: "Birmingham, AL 35208",
-  },
-  {
-    id: "4129-avenue-q",
-    name: "4129 Avenue Q",
-    location: "Birmingham, AL 35208",
-  },
-  {
-    id: "4011-43rd-avenue-n",
-    name: "4011 43rd Avenue N",
-    location: "Birmingham, AL 35217",
-  },
-  {
-    id: "9645-9th-ave-n",
-    name: "9645 9th Ave N",
-    location: "Birmingham, AL 35211",
-  },
-];
-
-export const portfolioProperties: PortfolioProperty[] = reference.photos[
-  "property-performance"
-].map((image, index, images) => {
-  const caption = captions[index];
-  const sold = index === images.length - 1;
-  return {
-    id: caption?.id ?? `portfolio-home-${index + 1}`,
-    name:
-      caption?.name ??
-      (sold
-        ? "Sold property"
-        : `Portfolio home ${String(index + 1).padStart(2, "0")}`),
-    location: caption?.location ?? null,
-    image: index === 0 ? reference.photos["property-detail"][0] : image,
-    sold,
-    addressProvided: !!caption,
-  };
-});
+// The explicit mapping is the only ordered property/photo source for all tabs.
+// Source-template status is historical, not a current database classification.
+export const portfolioProperties: PortfolioProperty[] = propertyMapping.map(
+  (p) => ({
+    id: p.id,
+    name: p.address ?? "Unlabeled property",
+    location: p.location,
+    image: p.photo,
+    sold: p.status === "sold",
+    addressProvided: p.address !== null,
+  }),
+);
 
 export const currency = (value: number) =>
   new Intl.NumberFormat("en-US", {

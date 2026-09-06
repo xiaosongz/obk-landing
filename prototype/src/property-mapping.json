@@ -1,0 +1,298 @@
+[
+  {
+    "id": "2-4401-avenue-i",
+    "photo": "/images/property-detail-01.png",
+    "address": "4401 Avenue I",
+    "location": "Birmingham, AL 35208",
+    "status": "current",
+    "cockpitAddress": null
+  },
+  {
+    "id": "4129-avenue-q",
+    "photo": "/images/home-02.png",
+    "address": "4129 Avenue Q",
+    "location": "Birmingham, AL 35208",
+    "status": "current",
+    "cockpitAddress": null
+  },
+  {
+    "id": "4011-43rd-avenue-n",
+    "photo": "/images/home-03.png",
+    "address": "4011 43rd Avenue N",
+    "location": "Birmingham, AL 35217",
+    "status": "current",
+    "cockpitAddress": null
+  },
+  {
+    "id": "9645-9th-ave-n",
+    "photo": "/images/home-04.png",
+    "address": "9645 9th Ave N",
+    "location": "Birmingham, AL 35211",
+    "status": "current",
+    "cockpitAddress": null
+  },
+  {
+    "id": "portfolio-home-5",
+    "photo": "/images/home-05.png",
+    "address": null,
+    "location": null,
+    "status": "current",
+    "cockpitAddress": null
+  },
+  {
+    "id": "portfolio-home-6",
+    "photo": "/images/home-06.png",
+    "address": null,
+    "location": null,
+    "status": "current",
+    "cockpitAddress": null
+  },
+  {
+    "id": "portfolio-home-7",
+    "photo": "/images/home-07.png",
+    "address": null,
+    "location": null,
+    "status": "current",
+    "cockpitAddress": null
+  },
+  {
+    "id": "portfolio-home-8",
+    "photo": "/images/home-08.png",
+    "address": null,
+    "location": null,
+    "status": "current",
+    "cockpitAddress": null
+  },
+  {
+    "id": "portfolio-home-9",
+    "photo": "/images/portfolio-09.png",
+    "address": null,
+    "location": null,
+    "status": "current",
+    "cockpitAddress": null
+  },
+  {
+    "id": "portfolio-home-10",
+    "photo": "/images/portfolio-10.png",
+    "address": null,
+    "location": null,
+    "status": "current",
+    "cockpitAddress": null
+  },
+  {
+    "id": "portfolio-home-11",
+    "photo": "/images/portfolio-11.png",
+    "address": null,
+    "location": null,
+    "status": "current",
+    "cockpitAddress": null
+  },
+  {
+    "id": "portfolio-home-12",
+    "photo": "/images/portfolio-12.png",
+    "address": null,
+    "location": null,
+    "status": "current",
+    "cockpitAddress": null
+  },
+  {
+    "id": "portfolio-home-13",
+    "photo": "/images/portfolio-13.png",
+    "address": null,
+    "location": null,
+    "status": "current",
+    "cockpitAddress": null
+  },
+  {
+    "id": "portfolio-home-14",
+    "photo": "/images/portfolio-14.png",
+    "address": null,
+    "location": null,
+    "status": "current",
+    "cockpitAddress": null
+  },
+  {
+    "id": "portfolio-home-15",
+    "photo": "/images/portfolio-15.png",
+    "address": null,
+    "location": null,
+    "status": "current",
+    "cockpitAddress": null
+  },
+  {
+    "id": "portfolio-home-16",
+    "photo": "/images/portfolio-16.png",
+    "address": null,
+    "location": null,
+    "status": "current",
+    "cockpitAddress": null
+  },
+  {
+    "id": "portfolio-home-17",
+    "photo": "/images/portfolio-17.png",
+    "address": null,
+    "location": null,
+    "status": "current",
+    "cockpitAddress": null
+  },
+  {
+    "id": "portfolio-home-18",
+    "photo": "/images/portfolio-18.png",
+    "address": null,
+    "location": null,
+    "status": "current",
+    "cockpitAddress": null
+  },
+  {
+    "id": "portfolio-home-19",
+    "photo": "/images/portfolio-19.png",
+    "address": null,
+    "location": null,
+    "status": "current",
+    "cockpitAddress": null
+  },
+  {
+    "id": "portfolio-home-20",
+    "photo": "/images/portfolio-20.png",
+    "address": null,
+    "location": null,
+    "status": "current",
+    "cockpitAddress": null
+  },
+  {
+    "id": "portfolio-home-21",
+    "photo": "/images/portfolio-21.png",
+    "address": null,
+    "location": null,
+    "status": "current",
+    "cockpitAddress": null
+  },
+  {
+    "id": "portfolio-home-22",
+    "photo": "/images/portfolio-22.png",
+    "address": null,
+    "location": null,
+    "status": "current",
+    "cockpitAddress": null
+  },
+  {
+    "id": "portfolio-home-23",
+    "photo": "/images/portfolio-23.png",
+    "address": null,
+    "location": null,
+    "status": "current",
+    "cockpitAddress": null
+  },
+  {
+    "id": "portfolio-home-24",
+    "photo": "/images/portfolio-24.png",
+    "address": null,
+    "location": null,
+    "status": "current",
+    "cockpitAddress": null
+  },
+  {
+    "id": "portfolio-home-25",
+    "photo": "/images/portfolio-25.png",
+    "address": null,
+    "location": null,
+    "status": "current",
+    "cockpitAddress": null
+  },
+  {
+    "id": "portfolio-home-26",
+    "photo": "/images/portfolio-26.png",
+    "address": null,
+    "location": null,
+    "status": "current",
+    "cockpitAddress": null
+  },
+  {
+    "id": "portfolio-home-27",
+    "photo": "/images/portfolio-27.png",
+    "address": null,
+    "location": null,
+    "status": "current",
+    "cockpitAddress": null
+  },
+  {
+    "id": "portfolio-home-28",
+    "photo": "/images/portfolio-28.png",
+    "address": null,
+    "location": null,
+    "status": "current",
+    "cockpitAddress": null
+  },
+  {
+    "id": "portfolio-home-29",
+    "photo": "/images/portfolio-29.png",
+    "address": null,
+    "location": null,
+    "status": "current",
+    "cockpitAddress": null
+  },
+  {
+    "id": "portfolio-home-30",
+    "photo": "/images/portfolio-30.png",
+    "address": null,
+    "location": null,
+    "status": "current",
+    "cockpitAddress": null
+  },
+  {
+    "id": "portfolio-home-31",
+    "photo": "/images/portfolio-31.png",
+    "address": null,
+    "location": null,
+    "status": "current",
+    "cockpitAddress": null
+  },
+  {
+    "id": "portfolio-home-32",
+    "photo": "/images/portfolio-32.png",
+    "address": null,
+    "location": null,
+    "status": "current",
+    "cockpitAddress": null
+  },
+  {
+    "id": "portfolio-home-33",
+    "photo": "/images/portfolio-33.png",
+    "address": null,
+    "location": null,
+    "status": "current",
+    "cockpitAddress": null
+  },
+  {
+    "id": "portfolio-home-34",
+    "photo": "/images/portfolio-34.png",
+    "address": null,
+    "location": null,
+    "status": "current",
+    "cockpitAddress": null
+  },
+  {
+    "id": "portfolio-home-35",
+    "photo": "/images/portfolio-35.png",
+    "address": null,
+    "location": null,
+    "status": "current",
+    "cockpitAddress": null
+  },
+  {
+    "id": "portfolio-home-36",
+    "photo": "/images/portfolio-36.png",
+    "address": null,
+    "location": null,
+    "status": "current",
+    "cockpitAddress": null
+  },
+  {
+    "id": "portfolio-home-37",
+    "photo": "/images/home-01.png",
+    "address": null,
+    "location": null,
+    "status": "sold",
+    "cockpitAddress": null
+  }
+]

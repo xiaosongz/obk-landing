@@ -33,7 +33,7 @@ The full business-process copy is retained in expandable reading sections. Illus
 
 - Curated business copy and images are in `src/reference-content.ts` and `public/images/`. Seven reference pages were saved through the authenticated browser outside this public repository; they include six top-level pages and the one linked property-detail template. This is not a complete Takeout archive.
 - The portfolio showcase has 37 photographs. The separate property-performance directory has 36 current-image entries and one sold-image entry. These are source-page counts, not verified fund metrics.
-- Only four current entries have source addresses. Other captions remain generic and do not imply database IDs. Operating stage, lease, financial values, and reporting dates are not inferred from photographs.
+- Only four current entries have source addresses. Other captions explicitly say “Unlabeled property” and do not imply database IDs. Operating stage, lease, financial values, and reporting dates are not inferred from photographs.
 - The investor account uses a fictional identity and illustrative capital amounts. Preferred-return/promote values and property financial cells remain unfilled. No personal investor record, tenant record, legal agreement, or screenshot financial table is imported.
 - The source login page was blank. The featured-video slot and subscription-agreement link had no supplied content. These omissions are labeled rather than filled with invented material.
 - Production must use authenticated server-side investor/fund authorization and the existing cockpit’s approved financial read models. Source narrative definitions need reconciliation with those models before displaying calculated results.
@@ -42,6 +42,26 @@ The full business-process copy is retained in expandable reading sections. Illus
 
 `App.tsx` owns navigation and page routes. `PublicPages.tsx`, `InvestorHome.tsx`, `FundPortfolio.tsx`, and `PropertyPages.tsx` own their respective page content. `site-data.ts` contains typed source-directory metadata and the explicitly fictional account fixture. Shared theme and responsive layout live in `main.tsx` and `styles.css`.
 
-The old generic dashboard and unrelated distribution chart have been removed. The root repository’s original static page and Pages workflow remain separate; the workflow does not build this prototype. No changes have been pushed or deployed.
+The old generic dashboard and unrelated distribution chart have been removed. The root repository’s original static page and Pages workflow remain separate; the workflow does not build this prototype. The prototype is maintained on `feat/investor-portal-prototype`; the root deployment remains separate.
 
 Validation: TypeScript and production build pass. Browser checks covered all six navigation destinations, the 37-image viewer, expanded process copy, fund-directory search, property-report sections, and the loaded map. The final homepage reload reported no new browser errors. All 46 deduplicated image files and source-content coverage checks passed. Mobile styles are implemented but have not been independently browser-tested.
+
+## Canonical property/photo mapping
+
+Edit `src/property-mapping.json`: one explicit row per source-directory property,
+shared by the public Portfolio, Fund III Portfolio, and property-detail routes.
+`photo` is the local image path; `address` and `location` are confirmed source
+captions or `null`. Keep `id` stable so existing report links continue to work.
+`status` preserves the source template's `current`/`sold` grouping, not live
+ownership. Do not derive status, fund membership, or an address from image order.
+`cockpitAddress` is reserved for an owner-confirmed exact database address match;
+leave it `null` until verified. It never supplies a photo address by itself.
+
+Four existing captions are retained; 33 properties remain explicitly unlabeled.
+The first property's confirmed detailed-page photo is now used in both tabs.
+The source arrays were not actually identical: the public gallery also used
+`portfolio-03.png` and `portfolio-37.png`, while the rendered property directory
+used `home-03.png` and `property-detail-01.png`. Those two displaced public assets
+remain on disk with no assigned address; the owner must verify their relationship
+before adding them to the canonical mapping. No visual similarity is treated as
+an address match. There are no longer separately maintained portfolio photo arrays.
