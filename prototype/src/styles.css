@@ -1311,3 +1311,14 @@ figure > figcaption span:first-child {
   display: block;
   margin-top: 0.35rem;
 }
+
+.fund-metrics strong.metric-unreported {
+  font-size: 1.1rem;
+  line-height: 1.5;
+}
+.photo-unmatched {
+  width: 70px;
+  flex-shrink: 0;
+  font-size: 0.8rem;
+  color: var(--muted);
+}

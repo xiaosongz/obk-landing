@@ -1,4 +1,5 @@
 import propertyMapping from "./property-mapping.json";
+import type { MetricKey } from "./fund-data";
 
 export const navigation = [
   { key: "/", label: "Home" },
@@ -54,26 +55,42 @@ export const investorExample = {
   promoteRemaining: null,
 };
 
-export const fundMetrics = [
+export const fundMetrics: {
+  key: MetricKey;
+  label: string;
+  definition: string;
+}[] = [
   {
+    key: "capital_recycling_rate",
     label: "Capital recycling rate",
     definition: "Capital recycled ÷ initial equity invested × 100%.",
   },
-  { label: "Occupied homes", definition: "Count of occupied homes." },
-  { label: "Occupancy", definition: "Occupied homes ÷ total homes × 100%." },
   {
+    key: "occupied_homes",
+    label: "Occupied homes",
+    definition: "Count of occupied homes.",
+  },
+  {
+    key: "occupancy",
+    label: "Occupancy",
+    definition: "Occupied homes ÷ total homes × 100%.",
+  },
+  {
+    key: "stabilized_homes",
     label: "Stabilized homes",
     definition:
       "Count of homes classified as stabilized by the approved reporting model.",
   },
   {
+    key: "stabilization_rate",
     label: "Stabilization rate",
     definition: "Stabilized homes ÷ total homes × 100%.",
   },
   {
+    key: "refinance_pipeline",
     label: "Refinance pipeline",
     definition:
-      "Homes appraised and ready for long-term debt. The source template uses stabilized homes as a proxy; the final mapping needs verification.",
+      "Homes appraised and ready for long-term debt, as reported by the approved summary source. Not inferred from stabilization.",
   },
 ];
 

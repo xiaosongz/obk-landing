@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Button, Input, Table, Tooltip, Tag } from "antd";
+import { Alert, Button, Input, Table, Tooltip, Tag } from "antd";
 import type { TableColumnsType } from "antd";
 import {
   ArrowRightOutlined,
@@ -7,14 +7,27 @@ import {
   SearchOutlined,
 } from "@ant-design/icons";
 import { Link } from "react-router-dom";
-import { fundMetrics, portfolioProperties } from "./site-data";
+import { currency, fundMetrics, portfolioProperties } from "./site-data";
+import propertyMapping from "./property-mapping.json";
+import { formatMetric, matchPropertyPhoto } from "./fund-data";
+import type { FundProperty } from "./fund-data";
+import { useFundSnapshot } from "./useFundSnapshot";
 import type { PortfolioProperty } from "./site-data";
 
-const pending = (
-  <span className="pending" aria-label="Not provided">
-    —
-  </span>
-);
+interface DirectoryRow {
+  id: string;
+  name: string;
+  location: string | null;
+  photo?: PortfolioProperty;
+  data?: FundProperty;
+}
+const amount = (value: number | null | undefined) =>
+  value === undefined
+    ? "Not yet reported"
+    : value === null
+      ? "Missing"
+      : currency(value);
+
 const note = (title: string, children: string) => (
   <aside className="manager-note">
     <p className="eyebrow">MANAGER NOTES · TEMPLATE CONTENT</p>
@@ -25,60 +38,100 @@ const note = (title: string, children: string) => (
 
 export default function FundPortfolio() {
   const [search, setSearch] = useState("");
-  const current = portfolioProperties.filter(
-    (p) =>
-      !p.sold &&
-      `${p.name} ${p.location ?? ""}`
-        .toLowerCase()
-        .includes(search.toLowerCase()),
+  const report = useFundSnapshot();
+  const rows: DirectoryRow[] = report.data
+    ? report.data.properties.map((data) => {
+        const mapping = matchPropertyPhoto(data.address, propertyMapping);
+        const photo = portfolioProperties.find((p) => p.id === mapping?.id);
+        return {
+          id: `db-${data.propertyId}`,
+          name: photo?.name ?? data.address,
+          location: photo?.location ?? null,
+          photo,
+          data,
+        };
+      })
+    : portfolioProperties
+        .filter((p) => !p.sold)
+        .map((photo) => ({
+          id: photo.id,
+          name: photo.name,
+          location: photo.location,
+          photo,
+        }));
+  const current = rows.filter((p) =>
+    `${p.name} ${p.location ?? ""} ${p.data?.address ?? ""}`
+      .toLowerCase()
+      .includes(search.toLowerCase()),
   );
-  const columns: TableColumnsType<PortfolioProperty> = [
+  const columns: TableColumnsType<DirectoryRow> = [
     {
       title: "Property",
       key: "property",
       fixed: "left",
-      width: 260,
+      width: 280,
       sorter: (a, b) => a.name.localeCompare(b.name),
       render: (_, p) => (
-        <Link className="table-property" to={`/property-performance/${p.id}`}>
-          <img src={p.image} alt="" />
+        <div className="table-property">
+          {p.photo ? (
+            <img src={p.photo.image} alt="" />
+          ) : (
+            <span className="photo-unmatched">Photo unconfirmed</span>
+          )}
           <span>
             {p.name}
-            <small>{p.location ?? "Address unconfirmed"}</small>
+            <small>
+              {p.location ??
+                (p.photo ? "Address unconfirmed" : "Database address")}
+            </small>
           </span>
-        </Link>
+        </div>
       ),
     },
-    { title: "Acquisition date", key: "acquired", render: () => pending },
+    {
+      title: "Status",
+      key: "status",
+      render: (_, p) =>
+        p.data ? (p.data.status ?? "Missing") : "Source template only",
+    },
+    {
+      title: "Acquisition date",
+      key: "acquired",
+      render: (_, p) =>
+        p.data ? (p.data.purchaseDate ?? "Missing") : "Not yet reported",
+    },
     {
       title: "Acquisition cost",
       key: "acquisition",
       align: "right",
-      render: () => pending,
+      render: (_, p) => amount(p.data?.purchasePrice),
     },
     {
       title: "Renovation cost",
       key: "renovation",
       align: "right",
-      render: () => pending,
+      render: (_, p) => amount(p.data?.renovationCost),
     },
     {
       title: "Total cost",
       key: "total",
       align: "right",
-      render: () => pending,
+      render: (_, p) => amount(p.data?.totalCapitalization),
     },
     {
       title: "Report",
       key: "details",
-      render: (_, p) => (
-        <Link
-          aria-label={`View ${p.name} report`}
-          to={`/property-performance/${p.id}`}
-        >
-          <ArrowRightOutlined />
-        </Link>
-      ),
+      render: (_, p) =>
+        p.photo ? (
+          <Link
+            aria-label={`View ${p.name} report`}
+            to={`/property-performance/${p.photo.id}`}
+          >
+            <ArrowRightOutlined />
+          </Link>
+        ) : (
+          <span className="pending">Not linked</span>
+        ),
     },
   ];
   const performanceColumns = [
@@ -105,8 +158,22 @@ export default function FundPortfolio() {
             <p className="eyebrow">SECTION I</p>
             <h2>Portfolio at a glance.</h2>
           </div>
-          <Tag>Financial report pending</Tag>
+          <Tag>{report.data ? "Cockpit export" : "Report unavailable"}</Tag>
         </div>
+        {report.state !== "ready" && (
+          <Alert
+            showIcon
+            type={report.state === "error" ? "error" : "info"}
+            title={
+              report.state === "loading"
+                ? "Loading Fund III report…"
+                : report.state === "error"
+                  ? "The Fund III report could not be loaded"
+                  : "Fund III report not yet supplied"
+            }
+            description="The photographs below are the source directory; Fund III membership and financial values are unverified until a report is available."
+          />
+        )}
         <div className="fund-metrics">
           {fundMetrics.map((metric) => (
             <div key={metric.label}>
@@ -121,15 +188,36 @@ export default function FundPortfolio() {
                   </button>
                 </Tooltip>
               </span>
-              <strong>—</strong>
-              <small>Awaiting report</small>
+              <strong
+                className={
+                  report.data?.summary[metric.key].state === "reported"
+                    ? ""
+                    : "metric-unreported"
+                }
+              >
+                {formatMetric(
+                  metric.key,
+                  report.data?.summary[metric.key] ?? {
+                    state: "not_reported",
+                    value: null,
+                  },
+                )}
+              </strong>
+              <small>
+                {report.data?.summaryAsOf
+                  ? `As of ${report.data.summaryAsOf}`
+                  : "Reporting date not supplied"}
+              </small>
             </div>
           ))}
         </div>
         <p className="source-note">
-          All six measures from the reference are retained. Gallery image counts
-          are not used as fund metrics; stages, occupancy, and financial values
-          await authoritative data.
+          {report.data
+            ? `Exported ${new Date(report.data.exportedAt).toLocaleString()}. Acquisition values reflect the database at export time.`
+            : "No financial snapshot is available."}{" "}
+          Zero is a reported value; “Missing” means the source lacks a value;
+          “Not yet reported” means no approved report has supplied it. Photo
+          counts do not determine fund metrics.
         </p>
       </section>
       <section className="section-space">
@@ -165,22 +253,25 @@ export default function FundPortfolio() {
               aria-label="Search fund properties"
             />
           </div>
-          <Table<PortfolioProperty>
+          <Table<DirectoryRow>
             rowKey="id"
             columns={columns}
             dataSource={current}
-            scroll={{ x: 1050 }}
+            scroll={{ x: 1250 }}
             pagination={{
               pageSize: 6,
               showSizeChanger: false,
-              showTotal: (total) => `${total} source directory entries`,
+              showTotal: (total) =>
+                `${total} ${report.data ? "Fund III properties" : "source directory entries"}`,
             }}
           />
           <p className="source-note">
-            This directory preserves the reference’s current-property imagery.
-            Both portfolio tabs use the same photo and address mapping.
-            Unconfirmed addresses remain unlabeled; financial cells await
-            reporting data.
+            {report.data
+              ? "Only properties assigned to Fund III in the export appear here. Acquisition cost is purchase price; total cost is reported capitalization, not an inferred sum. Sold properties remain acquisition history."
+              : "This source photo directory does not establish Fund III membership."}{" "}
+            Both tabs share the canonical photo mapping. Database properties
+            without an explicit photo match show “Photo unconfirmed”; no photo
+            is assigned by row order.
           </p>
           {note(
             "Acquisitions, dispositions & capital returned",

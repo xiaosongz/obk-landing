@@ -1,0 +1,9 @@
+# Defense in depth: reports and local connection settings must stay outside Git.
+.env*
+!.env.example
+*.pgpass
+.pgpass
+pg_service.conf
+/private-data/
+/public/lp-data/
+/fund-iii.json

@@ -65,3 +65,133 @@ used `home-03.png` and `property-detail-01.png`. Those two displaced public asse
 remain on disk with no assigned address; the owner must verify their relationship
 before adding them to the canonical mapping. No visual similarity is treated as
 an address match. There are no longer separately maintained portfolio photo arrays.
+
+## Fund III: private read-only export
+
+The LP prototype never calls the GP cockpit API or uses a GP session. A small
+Node exporter runs `psql` through an explicitly configured **dedicated read-only
+libpq service**, filters by `funds.fund_name = 'Fund III'`, validates an exact LP
+field allowlist, and atomically writes a mode-0600 JSON snapshot **outside this
+repository**. No snapshot, credential, or connection setting is bundled by the
+production build. The Vite dev/preview server exposes the validated file at
+`/lp-data/fund-iii.json` only to loopback requests with a local Host and matching
+Origin, with `Cache-Control: no-store`. The browser uses this route without
+credentials or redirects. Missing files, malformed reports, and HTML fallbacks
+are never treated as financial reports.
+
+### Owner setup — remains for the owner to fill in
+
+Requires Node 22.18+ (native TypeScript stripping) and `psql` on PATH. Configure a
+private libpq service outside repositories for `memini.lan:5433`, database `obk`,
+using a dedicated LP reader and the normal private libpq password file. Role
+provisioning remains an owner/DBA step: grant CONNECT, schema USAGE, and SELECT on
+only the columns below. Column-level grants suffice. Do not use a GP/developer
+account. The role must have no write privileges, superuser, role/database creation,
+replication, or RLS bypass. The exporter checks role attributes and write privileges
+on the two source tables. All queries run in one repeatable-read, read-only
+transaction with timeouts, no psqlrc, no password prompts, and a final rollback.
+Failures preserve the previous snapshot and do not print database error details.
+
+After configuring a private service named `obk_lp` and creating a private output
+directory, run from `prototype/`. The output path below is a placeholder:
+
+```sh
+export PGSERVICE=obk_lp
+export OBK_LP_DATA_FILE=/absolute/private/directory/fund-iii.json
+npm run export:fund-iii
+npm run dev
+# Or run npm run build, then npm run preview with the same OBK_LP_DATA_FILE.
+```
+
+The exporter refuses destinations inside this repository. Never place actual
+reports in `src/`, `public/`, or another public repo. Refresh the export for each
+reporting update. The UI displays export time separately from the summary's as-of
+date; export time does not establish freshness of the underlying database records.
+
+### Exact acquisition columns
+
+Traced against the adjacent cockpit's `pipeline/sql/001_create_schema.sql` and
+portfolio read service. No real records were copied from that checkout.
+`scripts/fund-iii.sql` selects only:
+
+| Source | Purpose / JSON field |
+|---|---|
+| `funds.fund_id`, `funds.fund_name` | Join and exact Fund III filter; require one matching fund |
+| `properties.fund_id` | Actual fund membership join |
+| `properties.property_id` | `propertyId`; row key, never a photo ID |
+| `properties.address` | `address` |
+| `properties.status` | `status`, displayed verbatim |
+| `properties.purchase_date` | `purchaseDate`, ISO date |
+| `properties.purchase_price` | `purchasePrice`; Acquisition cost means purchase price, excluding separate closing costs |
+| `properties.total_renovation_cost` | `renovationCost` |
+| `properties.total_capitalization` | `totalCapitalization`; Total cost, never an inferred sum |
+
+The query follows cockpit exclusions `property_id < 9001` and status distinct
+from `Acquisition Terminated`. Sold properties remain acquisition history; this
+is not a definition of the denominator for current-home metrics. A fund with no
+properties gives an empty directory; a missing fund fails export. No investor,
+tenant, lease, transaction, bank, or GP-only fields are selected. Amounts are USD;
+SQL null stays null and zero stays zero. Extra JSON fields fail validation.
+
+### Six summary measures — explicit source stub
+
+**No approved source for all six summary measures was present in the referenced
+schema/service. No live LP credentials were configured or used.** The cockpit's
+`occupancy` is `collection_rate` (rent collected / potential rent), not physical
+occupied-home occupancy. It is not relabeled here. Photo counts, `Rented` status,
+cap-rate thresholds, and stabilized-home counts are not substituted for the
+requested metrics.
+
+The exporter supports an optional owner-provided view,
+`public.lp_fund_iii_summary`. **This is a new contract, not an existing cockpit
+view; this change does not create it.** The owner must supply approved database
+source queries, period, current-home denominator, and classification rules. Grant
+the reader SELECT on its five columns:
+
+| Column | Required contract |
+|---|---|
+| `fund_name` | Exact `Fund III` |
+| `as_of_date` | DATE; same non-null reporting date on all six rows |
+| `metric` | One unique key below; exactly six rows for Fund III |
+| `state` | `reported`, `missing`, or `not_reported` |
+| `value` | Numeric; non-null only for `reported`; zero is valid |
+
+| Metric key | Meaning / units |
+|---|---|
+| `capital_recycling_rate` | Recycled capital / initial equity × 100; percentage points, may exceed 100 |
+| `occupied_homes` | Physically occupied-home count; integer |
+| `occupancy` | Occupied homes / approved total homes × 100; 0–100 |
+| `stabilized_homes` | Count under owner-approved stabilization rules; integer |
+| `stabilization_rate` | Stabilized homes / approved total homes × 100; 0–100 |
+| `refinance_pipeline` | Appraised homes ready for long-term debt; integer |
+
+An absent view gives all six `not_reported` states with null values and summary
+date. Once the view is supplied, all six values flow into the UI. `missing` means
+an expected source value is absent; `not_reported` means no report yet supplies
+the measure. Undefined ratios, including zero denominators, should be `missing`,
+not fabricated 0%. Partial/duplicate/mismatched-period reports fail export. The
+live export and these approved sources remain **for the owner to fill in**.
+
+### Photo matching and production handoff
+
+After verifying a photo's identity, fill its `cockpitAddress` in
+`src/property-mapping.json` with the exact database address and ensure `address`
+is confirmed. All join keys currently remain null. Matching must be exact and
+unique; no fuzzy/address-normalization or row-order match is used. Matched rows
+use the same photo and caption as the public Portfolio. Unmatched database rows
+keep their real address and say “Photo unconfirmed.” Without an export, the source
+photo directory remains explicitly labeled as unverified Fund III membership.
+
+Production hosting/authentication is not added by this task. Before serving real
+financial data beyond local review, the owner must provide a dedicated
+LP-authorized same-origin endpoint with this JSON contract and fund authorization,
+and adapt the currently credential-free client to that LP session. Never put the
+snapshot on a public static deployment. The demo login is not authorization;
+the local Vite file route is not part of the production build.
+
+`npm run test:fund-data` verifies synthetic value states, rejected/extra fields,
+exact photo matching, exporter subprocess behavior and atomic preservation, and
+the actual local HTTP route (success, absent/invalid report, cross-origin denial).
+`npm run build` checks TypeScript and builds production assets. Tests use no real
+DB connection or real records and are not bundled. The remaining stage and
+property-detail financial templates are outside these two tasks.
