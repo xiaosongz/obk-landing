@@ -26,12 +26,48 @@ export interface FundProperty {
   totalCapitalization: number | null;
   costFromMergerModel: boolean;
 }
+export interface PropertyDetails {
+  propertyId: number;
+  bedrooms: number | null;
+  bathrooms: number | null;
+  yearBuilt: number | null;
+  sqft: number | null;
+  zip: string | null;
+  lat: number | null;
+  lon: number | null;
+  holdPeriodYears: number | null;
+  currentMonthlyRent: number | null;
+  leaseStart: string | null;
+  leaseEnd: string | null;
+  monthToMonth: boolean | null;
+  leaseCurrent: boolean | null;
+}
+
+export interface PropertyPeriod {
+  propertyId: number;
+  period: "trailing_12_mo" | "since_acquired";
+  periodStart: string | null;
+  periodEnd: string | null;
+  egi: number | null;
+  propertyTax: number | null;
+  insurance: number | null;
+  opex: number | null;
+  noi: number | null;
+  capex: number | null;
+  noiAfterCapex: number | null;
+  potentialRent: number | null;
+  collectionRate: number | null;
+  noiYield: number | null;
+  annualizedYield: number | null;
+}
 export interface FundSnapshot {
-  schemaVersion: 2;
+  schemaVersion: 3;
   fundName: "Fund III";
   exportedAt: string;
   summaryAsOf: string | null;
   properties: FundProperty[];
+  propertyDetails: PropertyDetails[];
+  propertyPeriods: PropertyPeriod[];
   summary: Record<MetricKey, ReportedValue> &
     Record<(typeof dateKeys)[number], ReportedValue<string>>;
 }
@@ -102,6 +138,11 @@ function nullableMoney(value: unknown) {
   }
 }
 
+function nullableNumber(value: unknown) {
+  if (value !== null && (typeof value !== "number" || !Number.isFinite(value)))
+    throw new Error("Invalid report number");
+}
+
 // Fail closed: unknown fields (including accidentally exported personal data) are rejected.
 export function parseFundSnapshot(input: unknown): FundSnapshot {
   const data = record(input);
@@ -111,9 +152,11 @@ export function parseFundSnapshot(input: unknown): FundSnapshot {
     "exportedAt",
     "summaryAsOf",
     "properties",
+    "propertyDetails",
+    "propertyPeriods",
     "summary",
   ]);
-  if (data.schemaVersion !== 2 || data.fundName !== "Fund III")
+  if (data.schemaVersion !== 3 || data.fundName !== "Fund III")
     throw new Error("Wrong report or fund");
   if (
     typeof data.exportedAt !== "string" ||
@@ -163,6 +206,144 @@ export function parseFundSnapshot(input: unknown): FundSnapshot {
       "totalCapitalization",
     ])
       nullableMoney(row[key]);
+  }
+  if (
+    !Array.isArray(data.propertyDetails) ||
+    !Array.isArray(data.propertyPeriods)
+  )
+    throw new Error("Missing property reports");
+  const detailIds = new Set<number>();
+  for (const inputRow of data.propertyDetails) {
+    const row = record(inputRow);
+    exactKeys(row, [
+      "propertyId",
+      "bedrooms",
+      "bathrooms",
+      "yearBuilt",
+      "sqft",
+      "zip",
+      "lat",
+      "lon",
+      "holdPeriodYears",
+      "currentMonthlyRent",
+      "leaseStart",
+      "leaseEnd",
+      "monthToMonth",
+      "leaseCurrent",
+    ]);
+    if (
+      typeof row.propertyId !== "number" ||
+      !ids.has(row.propertyId) ||
+      detailIds.has(row.propertyId)
+    )
+      throw new Error("Unknown or duplicate details property ID");
+    detailIds.add(row.propertyId);
+    for (const key of [
+      "bedrooms",
+      "bathrooms",
+      "yearBuilt",
+      "sqft",
+      "holdPeriodYears",
+      "currentMonthlyRent",
+    ])
+      nullableMoney(row[key]);
+    for (const key of ["bedrooms", "yearBuilt"])
+      if (row[key] !== null && !Number.isSafeInteger(row[key]))
+        throw new Error("Invalid asset integer");
+    if (row.zip !== null && (typeof row.zip !== "string" || !row.zip.trim()))
+      throw new Error("Invalid ZIP");
+    for (const [key, bound] of [
+      ["lat", 90],
+      ["lon", 180],
+    ] as const) {
+      nullableNumber(row[key]);
+      if (row[key] !== null && Math.abs(row[key] as number) > bound)
+        throw new Error("Invalid coordinate");
+    }
+    for (const key of ["leaseStart", "leaseEnd"])
+      if (row[key] !== null && !validDate(row[key]))
+        throw new Error("Invalid lease date");
+    if (
+      row.leaseStart !== null &&
+      row.leaseEnd !== null &&
+      (row.leaseStart as string) > (row.leaseEnd as string)
+    )
+      throw new Error("Invalid lease window");
+    for (const key of ["monthToMonth", "leaseCurrent"])
+      if (row[key] !== null && typeof row[key] !== "boolean")
+        throw new Error("Invalid lease flag");
+    const leaseCurrent =
+      row.monthToMonth === true ||
+      (row.leaseEnd !== null &&
+        data.summaryAsOf !== null &&
+        (row.leaseEnd as string) >= (data.summaryAsOf as string))
+        ? true
+        : row.monthToMonth === false &&
+            row.leaseEnd !== null &&
+            data.summaryAsOf !== null
+          ? false
+          : null;
+    if (row.leaseCurrent !== leaseCurrent)
+      throw new Error("Inconsistent lease current flag");
+  }
+  if (detailIds.size !== ids.size)
+    throw new Error("Every property needs details");
+  const periodIds = new Set<string>();
+  for (const inputRow of data.propertyPeriods) {
+    const row = record(inputRow);
+    exactKeys(row, [
+      "propertyId",
+      "period",
+      "periodStart",
+      "periodEnd",
+      "egi",
+      "propertyTax",
+      "insurance",
+      "opex",
+      "noi",
+      "capex",
+      "noiAfterCapex",
+      "potentialRent",
+      "collectionRate",
+      "noiYield",
+      "annualizedYield",
+    ]);
+    const id = `${row.propertyId}:${row.period}`;
+    if (
+      typeof row.propertyId !== "number" ||
+      !ids.has(row.propertyId) ||
+      typeof row.period !== "string" ||
+      !["trailing_12_mo", "since_acquired"].includes(row.period) ||
+      periodIds.has(id)
+    )
+      throw new Error("Unknown or duplicate property period");
+    periodIds.add(id);
+    for (const key of ["periodStart", "periodEnd"])
+      if (row[key] !== null && !validDate(row[key]))
+        throw new Error("Invalid property period date");
+    if (
+      (row.periodStart === null) !== (row.periodEnd === null) ||
+      (row.periodStart !== null &&
+        (row.periodStart as string) > (row.periodEnd as string))
+    )
+      throw new Error("Invalid property period window");
+    for (const key of [
+      "egi",
+      "propertyTax",
+      "insurance",
+      "opex",
+      "noi",
+      "capex",
+      "noiAfterCapex",
+      "potentialRent",
+      "collectionRate",
+      "noiYield",
+      "annualizedYield",
+    ]) {
+      nullableNumber(row[key]);
+      if (row[key] !== null && row.periodStart === null)
+        throw new Error("Property measures need dates");
+    }
   }
   const summary = record(data.summary);
   exactKeys(summary, [...metricKeys, ...dateKeys]);

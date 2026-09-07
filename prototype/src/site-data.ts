@@ -138,10 +138,10 @@ export const fundMetrics: {
 
 export const financialLines = [
   { key: "egi", label: "Effective gross income (EGI)" },
-  { key: "tax", label: "Property tax" },
+  { key: "propertyTax", label: "Property tax" },
   { key: "insurance", label: "Insurance" },
   { key: "opex", label: "Variable operating expenses" },
   { key: "noi", label: "Net operating income (NOI)" },
   { key: "capex", label: "Capital expenditures (CapEx)" },
-  { key: "fcf", label: "Free cash flow (FCF)" },
-];
+  { key: "noiAfterCapex", label: "NOI less CapEx" },
+] as const;

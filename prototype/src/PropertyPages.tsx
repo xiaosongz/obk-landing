@@ -17,12 +17,25 @@ import {
   EnvironmentOutlined,
   SearchOutlined,
 } from "@ant-design/icons";
-import { financialLines, portfolioProperties } from "./site-data";
+import { currency, financialLines, portfolioProperties } from "./site-data";
 import type { PortfolioProperty } from "./site-data";
+
+import { useFundSnapshot } from "./useFundSnapshot";
+import type { PropertyPeriod } from "./fund-data";
 
 const notProvided = <span className="pending">Not provided</span>;
 
+const amount = (value: number | null | undefined) =>
+  value == null ? notProvided : currency(value);
+const percent = (value: number | null | undefined) =>
+  value == null
+    ? notProvided
+    : `${new Intl.NumberFormat("en-US", { maximumFractionDigits: 1 }).format(value)}%`;
+const windowLabel = (row: PropertyPeriod | undefined) =>
+  `${row?.periodStart ?? "Not provided"} to ${row?.periodEnd ?? "Not provided"}`;
+
 function PropertyCards({ properties }: { properties: PortfolioProperty[] }) {
+  const { data } = useFundSnapshot();
   return (
     <div className="property-grid">
       {properties.map((p) => (
@@ -33,22 +46,34 @@ function PropertyCards({ properties }: { properties: PortfolioProperty[] }) {
           >
             <img
               src={p.image}
-              alt={
-                p.addressProvided
-                  ? `Photograph of ${p.name}`
-                  : p.name
-              }
+              alt={p.addressProvided ? `Photograph of ${p.name}` : p.name}
               loading="lazy"
             />
           </Link>
           <div className="property-card-content">
             <Tag>
-              {p.sold ? "Sold" : "Current portfolio"}
+              {data
+                ? (data.properties.find(
+                    (row) => row.propertyId === p.propertyId,
+                  )?.status ?? "Not provided")
+                : p.sold
+                  ? "Sold"
+                  : "Current portfolio"}
             </Tag>
             <h3>
               <Link to={`/property-performance/${p.id}`}>{p.name}</Link>
             </h3>
             <p>{p.location ?? "Address not provided in the reference"}</p>
+            {data && (
+              <p>
+                Current rent:{" "}
+                {amount(
+                  data.propertyDetails.find(
+                    (row) => row.propertyId === p.propertyId,
+                  )?.currentMonthlyRent,
+                )}
+              </p>
+            )}
             <Link className="text-link" to={`/property-performance/${p.id}`}>
               View property details <ArrowRightOutlined />
             </Link>
@@ -98,18 +123,35 @@ export function PropertyDirectory() {
         </section>
       )}
       <p className="source-note">
-        Each photograph is linked to its recorded address. Operating and
-        financial data for each home await the approved reporting source; no
-        value is shown as zero when it has not been reported.
+        Each photograph is linked to its recorded address. Status and rent come
+        from the portfolio snapshot; unknown values remain Not provided.
       </p>
     </>
   );
 }
 
-function FinancialTable({ cumulative = false }: { cumulative?: boolean }) {
+function FinancialTable({
+  row,
+  cumulative = false,
+}: {
+  row?: PropertyPeriod;
+  cumulative?: boolean;
+}) {
   const period = cumulative ? "Since acquisition" : "Trailing 12 months";
+  const extras = [
+    row?.potentialRent != null ? (
+      <>Potential rent: {amount(row.potentialRent)}</>
+    ) : null,
+    row?.collectionRate != null ? (
+      <>Collection rate: {percent(row.collectionRate)}</>
+    ) : null,
+    row?.noiYield != null ? <>NOI yield: {percent(row.noiYield)}</> : null,
+  ].filter((item) => item !== null);
   return (
     <div className="financial-report">
+      <p className="source-note">
+        {period}: {windowLabel(row)}
+      </p>
       <Table
         dataSource={financialLines}
         rowKey="key"
@@ -120,35 +162,28 @@ function FinancialTable({ cumulative = false }: { cumulative?: boolean }) {
             title: period,
             key: "amount",
             align: "right",
-            render: () => (
-              <span
-                className="pending"
-                aria-label="Financial value not provided"
-              >
-                —
-              </span>
-            ),
+            render: (_, line) => amount(row?.[line.key]),
           },
         ]}
       />
-      <div className="history-pending">
-        <p className="eyebrow">
-          {cumulative ? "CUMULATIVE PERFORMANCE" : "MONTHLY FINANCIAL HISTORY"}
+      {extras.length > 0 && (
+        <p className="source-note">
+          {extras.map((item, index) => (
+            <span key={index}>
+              {index > 0 ? " / " : ""}
+              {item}
+            </span>
+          ))}
         </p>
-        <h4>Financial history pending</h4>
-        <p>
-          The source chart is a screenshot placeholder. This area will show the
-          reported income, operating expenses, NOI, and cash flow when the
-          financial data is connected.
-        </p>
-        <span>No values are treated as zero.</span>
-      </div>
+      )}
     </div>
   );
 }
 
 export function PropertyDetail() {
   const { propertyId } = useParams();
+  const report = useFundSnapshot();
+  const data = report.data;
   const property = portfolioProperties.find((p) => p.id === propertyId);
   if (!property)
     return (
@@ -157,9 +192,37 @@ export function PropertyDetail() {
         <Button href="#/property-performance">Return to properties</Button>
       </div>
     );
-  const isSourceDetail = property.id === "4401-avenue-i";
-  const fields = (labels: string[]) =>
-    labels.map((label) => ({ key: label, label, children: notProvided }));
+  const asset = data?.properties.find(
+    (row) => row.propertyId === property.propertyId,
+  );
+  const details = data?.propertyDetails.find(
+    (row) => row.propertyId === property.propertyId,
+  );
+  const ttm = data?.propertyPeriods.find(
+    (row) =>
+      row.propertyId === property.propertyId && row.period === "trailing_12_mo",
+  );
+  const cumulative = data?.propertyPeriods.find(
+    (row) =>
+      row.propertyId === property.propertyId && row.period === "since_acquired",
+  );
+  const fullAddress =
+    asset?.address ??
+    (property.addressProvided
+      ? [property.name, property.location].filter(Boolean).join(", ")
+      : "Not provided");
+  const leaseTerm =
+    details?.monthToMonth === true
+      ? "Month-to-month"
+      : details?.leaseCurrent === true && details.leaseEnd
+        ? `Current through ${details.leaseEnd}`
+        : details?.leaseEnd &&
+            data?.summaryAsOf &&
+            details.leaseEnd < data.summaryAsOf
+          ? `Expired ${details.leaseEnd}; renewal not yet recorded`
+          : notProvided;
+  const lat = details?.lat;
+  const lon = details?.lon;
   return (
     <>
       <Breadcrumb
@@ -185,11 +248,20 @@ export function PropertyDetail() {
           All properties
         </Button>
       </div>
+      {report.state !== "ready" && (
+        <p className="source-note" role="status">
+          {report.state === "loading"
+            ? "Loading property snapshot…"
+            : "Property snapshot unavailable. Unknown values are Not provided."}
+        </p>
+      )}
+      {data && !asset && (
+        <p className="source-note">
+          This property is not included in the current snapshot.
+        </p>
+      )}
       <div className="property-summary">
-        <Image
-          src={property.image}
-          alt={`Photograph of ${property.name}`}
-        />
+        <Image src={property.image} alt={`Photograph of ${property.name}`} />
         <div>
           <p className="eyebrow">PERFORMANCE AT A GLANCE</p>
           <h2>The asset, in perspective.</h2>
@@ -199,18 +271,36 @@ export function PropertyDetail() {
               {
                 key: "status",
                 label: "Status",
-                children: property.sold ? "Sold property" : "Current portfolio",
+                children: asset?.status ?? notProvided,
               },
-              ...fields([
-                "Current occupancy",
-                "Current monthly rent",
-                "Total cost basis",
-                "Cumulative cash-on-cash return",
-              ]),
+              {
+                key: "occupancy",
+                label: "Current occupancy",
+                children:
+                  asset?.status === "Rented"
+                    ? "Occupied"
+                    : (asset?.status ?? notProvided),
+              },
+              {
+                key: "rent",
+                label: "Current monthly rent",
+                children: amount(details?.currentMonthlyRent),
+              },
+              {
+                key: "cost",
+                label: "Total cost basis",
+                children: amount(asset?.totalCapitalization),
+              },
+              {
+                key: "yield",
+                label: "Annualized NOI yield since acquisition",
+                children: percent(cumulative?.annualizedYield),
+              },
             ]}
           />
           <p className="source-note">
-            Report date and last data update: not yet provided.
+            Cost basis as of {data?.summary.costAsOf.value ?? "Not provided"} ·
+            TTM {windowLabel(ttm)}
           </p>
         </div>
       </div>
@@ -239,26 +329,53 @@ export function PropertyDetail() {
             {
               key: "address",
               label: "Address",
-              children: property.addressProvided
-                ? `${property.name}, ${property.location}`
-                : notProvided,
+              children: fullAddress,
             },
-            ...fields([
-              "Floor plan",
-              "Property type",
-              "Vintage",
-              "Square footage",
-              "Acquisition date",
-              "Total acquisition",
-              "Total renovation",
-              "Total cost",
-            ]),
+            {
+              key: "plan",
+              label: "Floor plan",
+              children:
+                details?.bedrooms != null && details?.bathrooms != null
+                  ? `${details.bedrooms} bd · ${details.bathrooms} ba`
+                  : notProvided,
+            },
+            {
+              key: "vintage",
+              label: "Vintage",
+              children: details?.yearBuilt ?? notProvided,
+            },
+            {
+              key: "sqft",
+              label: "Square footage",
+              children:
+                details?.sqft == null
+                  ? notProvided
+                  : `${details.sqft.toLocaleString("en-US")} sq ft`,
+            },
+            {
+              key: "acquired",
+              label: "Acquisition date",
+              children: asset?.purchaseDate ?? notProvided,
+            },
+            {
+              key: "purchase",
+              label: "Total acquisition",
+              children: amount(asset?.purchasePrice),
+            },
+            {
+              key: "renovation",
+              label: "Total renovation",
+              children: amount(asset?.renovationCost),
+            },
+            {
+              key: "total",
+              label: "Total cost",
+              children: amount(asset?.totalCapitalization),
+            },
             {
               key: "owner",
               label: "Owner",
-              children: isSourceDetail
-                ? "Obelisk Fund III LLC"
-                : notProvided,
+              children: !property.sold ? "Obelisk Fund III LLC" : notProvided,
             },
           ]}
         />
@@ -269,44 +386,55 @@ export function PropertyDetail() {
         <Descriptions
           bordered
           column={{ xs: 1, sm: 1, md: 2 }}
-          items={fields([
-            "Tenant(s)",
-            "Monthly rent",
-            "Lease type",
-            "Security deposit",
-            "Lease start date",
-            "Lease end date",
-            "Section 8 amount",
-            "Tenant portion",
-          ])}
+          items={[
+            {
+              key: "rent",
+              label: "Monthly rent",
+              children: amount(details?.currentMonthlyRent),
+            },
+            {
+              key: "start",
+              label: "Lease start",
+              children: details?.leaseStart ?? notProvided,
+            },
+            {
+              key: "end",
+              label: "Lease end",
+              children: details?.leaseEnd ?? notProvided,
+            },
+            { key: "term", label: "Lease term", children: leaseTerm },
+          ]}
         />
         <p className="source-note">
-          Lease and resident information is not included in this preview.
-          Production access will be restricted to authorized users.
+          Resident information is not shown. Rent is from the latest recorded
+          lease; the lease term is assessed as of{" "}
+          {data?.summaryAsOf ?? "Not provided"}.
         </p>
       </section>
       <section className="detail-section" id="detail-3">
         <p className="eyebrow">SECTION III</p>
         <h2>Financial performance</h2>
         <h3>3.1 Trailing 12-month financials</h3>
-        <FinancialTable />
+        <FinancialTable row={ttm} />
         <h3 className="cumulative-heading">
           3.2 Cumulative performance · since acquisition
         </h3>
-        <FinancialTable cumulative />
+        <FinancialTable row={cumulative} cumulative />
+        <p className="source-note">
+          Monthly history is not part of the snapshot.
+        </p>
         <Collapse
           className="calculation-rules"
           items={[
             {
               key: "rules",
-              label: "Calculation rules from the reporting template",
+              label: "Calculation rules",
               children: (
                 <div className="prose">
                   <p>
-                    T-12 spans the first day of the starting month through the
-                    last day of the ending month. The source anticipates monthly
-                    reporting. Cumulative performance runs from acquisition
-                    through the report date.
+                    The periods come from the cockpit’s merger model: TTM{" "}
+                    {windowLabel(ttm)}; since acquisition{" "}
+                    {windowLabel(cumulative)}.
                   </p>
                   <p>
                     The template’s EGI definition includes rent, subsidy income,
@@ -318,13 +446,7 @@ export function PropertyDetail() {
                     NOI = EGI − property tax − insurance − variable operating
                     expenses.
                     <br />
-                    FCF = NOI − capital expenditures.
-                  </p>
-                  <p>
-                    These are the partner’s reporting requirements. Accounting
-                    treatment and period definitions must be reconciled with the
-                    existing financial read models before production
-                    calculations are displayed.
+                    NOI less CapEx = NOI − capital expenditures.
                   </p>
                 </div>
               ),
@@ -335,23 +457,29 @@ export function PropertyDetail() {
       <section className="detail-section" id="detail-4">
         <p className="eyebrow">SECTION IV</p>
         <h2>Location & map</h2>
-        {isSourceDetail ? (
-          <iframe
-            className="property-map"
-            title="Location of 4401 Avenue I, Birmingham"
-            loading="lazy"
-            referrerPolicy="no-referrer"
-            src="https://www.google.com/maps/embed?origin=mfe&pb=!1m12!1m8!1m3!1d3327.4428890579893!2d-86.903352!3d33.48985!3m2!1i1024!2i768!4f13.1!2m1!1s33.489848,-86.903228!6i17!3m1!1sen!5m1!1sen"
-          />
+        {lat != null && lon != null ? (
+          <figure>
+            <iframe
+              className="property-map"
+              title={`Location of ${fullAddress}`}
+              loading="lazy"
+              referrerPolicy="no-referrer"
+              src={`https://www.openstreetmap.org/export/embed.html?bbox=${lon - 0.004},${lat - 0.003},${lon + 0.004},${lat + 0.003}&layer=mapnik&marker=${lat},${lon}`}
+            />
+            <figcaption>
+              {fullAddress} ·{" "}
+              <a
+                href={`https://www.openstreetmap.org/?mlat=${lat}&mlon=${lon}#map=17/${lat}/${lon}`}
+              >
+                View on OpenStreetMap
+              </a>
+            </figcaption>
+          </figure>
         ) : (
           <div className="location-pending">
             <EnvironmentOutlined />
-            <p>
-              {property.location
-                ? `${property.name}, ${property.location}`
-                : "Property location pending"}
-            </p>
-            <span>A verified map has not been supplied for this entry.</span>
+            <p>{fullAddress}</p>
+            <span>Map pending geocoding</span>
           </div>
         )}
       </section>

@@ -1,3 +1,25 @@
+/* Locally served OFL fonts; no Google runtime dependency. */
+@font-face {
+  font-family: Archivo;
+  src: url("/fonts/Archivo.ttf") format("truetype");
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+}
+@font-face {
+  font-family: "IBM Plex Mono";
+  src: url("/fonts/IBMPlexMono-Regular.ttf") format("truetype");
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+}
+@font-face {
+  font-family: "IBM Plex Mono";
+  src: url("/fonts/IBMPlexMono-Medium.ttf") format("truetype");
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+}
 :root {
   font-family: Archivo, sans-serif;
   color: #172635;
@@ -868,32 +890,22 @@ figure > figcaption span:first-child {
 }
 .financial-report {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: minmax(0, 1fr);
   border: 1px solid var(--rule);
   background: white;
 }
 .financial-report > .ant-table-wrapper {
   min-width: 0;
 }
-.history-pending {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  padding: 2.5rem;
-  border-left: 1px solid var(--rule);
-  background: #f0f2ed;
+.financial-report > .source-note {
+  margin: 0;
+  padding: 1rem;
 }
-.history-pending h4 {
-  font-size: 1.4rem;
-  margin-bottom: 1rem;
+.detail-section figure {
+  margin: 0;
 }
-.history-pending p:not(.eyebrow) {
-  font-size: 0.9375rem;
-  color: var(--muted);
-}
-.history-pending > span {
-  color: var(--muted);
-  font-size: 0.8125rem;
+.detail-section figcaption {
+  overflow-wrap: anywhere;
 }
 .calculation-rules {
   margin-top: 2rem;
@@ -1089,11 +1101,6 @@ figure > figcaption span:first-child {
   }
   .financial-report {
     grid-template-columns: 1fr;
-  }
-  .history-pending {
-    border-left: 0;
-    border-top: 1px solid var(--rule);
-    padding: 2rem;
   }
   .footer-top {
     flex-wrap: wrap;

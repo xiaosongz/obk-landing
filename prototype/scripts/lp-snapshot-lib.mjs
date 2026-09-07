@@ -11,7 +11,7 @@ export function makeSnapshot(result, exportedAt = new Date().toISOString()) {
   // Forward every SQL field to the shared allowlist; never silently strip extras.
   return parseFundSnapshot({
     ...report,
-    schemaVersion: 2,
+    schemaVersion: 3,
     fundName: "Fund III",
     exportedAt,
   });
@@ -28,6 +28,8 @@ SELECT CASE WHEN EXISTS (
   AND NOT has_any_column_privilege(current_user, 'public.funds', 'INSERT,UPDATE')
   AND NOT EXISTS (
     SELECT 1 FROM (VALUES
+      ('public.leases'),
+      ('obk_merger.property_overview'),
       ('obk_merger.property_capitalization'),
       ('obk_merger.property_period_metrics'),
       ('obk_merger.merger_run_log')

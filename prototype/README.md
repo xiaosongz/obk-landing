@@ -25,7 +25,7 @@ Open [http://127.0.0.1:8766/](http://127.0.0.1:8766/). The server binds only to 
 | Investor Home | `#/investor-home` | Investor-relations contact, both fund links, provided subscription/capital/preferred-return/promote rows, legal-document placeholder, six native process overview cards and six illustrated process sections |
 | Fund III Portfolio | `#/fund-iii-portfolio` | Sourced fund snapshot and TTM window, Buy/Rehab/Rent/Refinance/Repeat stages, searchable acquisition directory, stabilized and stabilizing reporting layouts, manager-note areas |
 | Property Performance | `#/property-performance` | Source current/sold property gallery and routes to property details |
-| Property detail | `#/property-performance/4401-avenue-i` | Source property photo, performance-at-a-glance fields, asset overview, lease, T-12 and cumulative financial layouts, calculation rules, original map |
+| Property detail | `#/property-performance/:id` | Snapshot status/rent, asset and lease report, TTM and since-acquired financials, calculation rules, and OpenStreetMap from recorded coordinates |
 
 The full business-process copy is retained in expandable reading sections. Illustrations can be opened at full size. The first property’s detailed-page photograph takes precedence over the directory’s generic placeholder photograph.
 
@@ -33,7 +33,7 @@ The full business-process copy is retained in expandable reading sections. Illus
 
 - Curated business copy and process illustrations are in `src/reference-content.ts` and `public/images/`. Property photographs are in `public/images/properties/`, one per home, converted to 1600px JPEG from the owner's address-named photo library (shared drive `OBK Portal/Property Photos`). `src/property-mapping.json` links each photograph to its database record by address and property ID.
 - Funds I and II merged into Fund III; every current home is Fund III. The database's per-property fund column is the historical acquisition vehicle and is not shown to investors. 329 Valley Crest Drive was confirmed on 2026-09-07 against the August 2024 property-manager owner statement and the cockpit database; the source photo file name "328 Valley Crest.png" is a typo.
-- The investor account uses a fictional identity and illustrative capital amounts. Preferred-return/promote values and property financial cells remain unfilled. No personal investor record, tenant record, legal agreement, or screenshot financial table is imported.
+- The investor account uses a fictional identity and illustrative capital amounts. Preferred-return/promote values remain unfilled. Property reports use the v3 snapshot; missing fields display “Not provided.” No personal investor record, tenant record, legal agreement, or screenshot financial table is imported.
 - The source login page was blank. The unsupplied featured-video slot is removed. The subscription-agreement link remains explicitly labeled as unsupplied.
 - Production must use authenticated server-side investor/fund authorization and the website’s own snapshot database, populated from approved cockpit financial read models by a GP-side job. Source narrative definitions need reconciliation with those models before displaying calculated results.
 
@@ -41,7 +41,7 @@ The full business-process copy is retained in expandable reading sections. Illus
 
 `App.tsx` owns navigation and page routes. `PublicPages.tsx`, `InvestorHome.tsx`, `FundPortfolio.tsx`, and `PropertyPages.tsx` own their respective page content. `site-data.ts` contains typed source-directory metadata and the explicitly fictional account fixture. Shared theme and responsive layout live in `main.tsx` and `styles.css`.
 
-The old generic dashboard and unrelated distribution chart have been removed. The root repository’s original static page and Pages workflow remain separate; the workflow does not build this prototype. The prototype is maintained on `feat/investor-portal-prototype`; the root deployment remains separate.
+The old generic dashboard and unrelated distribution chart have been removed. The root repository’s original static page and Pages workflow remain separate; the workflow does not build this prototype. The prototype is maintained on `feat/design-polish`; the root deployment remains separate.
 
 Validation: TypeScript and production build pass. Browser checks covered all six navigation destinations, the 37-image viewer, expanded process copy, fund-directory search, property-report sections, and the loaded map. The final homepage reload reported no new browser errors. All 46 deduplicated image files and source-content coverage checks passed. Mobile styles are implemented but have not been independently browser-tested.
 
@@ -146,7 +146,7 @@ build time, so run the snapshot load and publish steps first when the data shoul
 ## Snapshot database
 
 **The website never connects to the cockpit database.** A GP-side load job reads
-only the allowlisted cockpit columns below and copies a validated v2 snapshot
+only the allowlisted cockpit columns below and copies a validated v3 snapshot
 into the separate `obk_lp` database. The publisher connects only to `obk_lp` and
 rebuilds the website JSON from normalized tables. The browser and preview worker
 serve the published file; neither has database credentials or a GP session.
@@ -155,19 +155,29 @@ tenants, transactions, or credentials are stored in these tables or committed.
 
 | `obk_lp` table / view | Columns and purpose |
 |---|---|
-| `public.fund_snapshots` | `snapshot_id` (bigserial PK), `fund_name`, `exported_at`, `summary_as_of`, `source_label`, `loaded_at` (defaults to now); v2 header and load metadata |
-| `public.fund_snapshot_metrics` | `snapshot_id` (FK), `metric`, `state`, `value_number`, `value_date`; PK `(snapshot_id, metric)`; exactly the 10 numeric and 3 date v2 measures |
+| `public.fund_snapshots` | `snapshot_id` (bigserial PK), `fund_name`, `exported_at`, `summary_as_of`, `source_label`, `loaded_at` (defaults to now), `schema_version` (2 for retained v2 rows, 3 for new loads); v3 header and load metadata |
+| `public.fund_snapshot_metrics` | `snapshot_id` (FK), `metric`, `state`, `value_number`, `value_date`; PK `(snapshot_id, metric)`; exactly the 10 numeric and 3 date summary measures |
 | `public.fund_snapshot_properties` | `snapshot_id` (FK), `property_id`, `address`, `status`, `purchase_date`, `purchase_price`, `renovation_cost`, `total_capitalization`, `cost_from_merger_model`; PK `(snapshot_id, property_id)` |
+| `public.fund_snapshot_property_details` (new) | `snapshot_id`, `property_id`, `bedrooms`, `bathrooms`, `year_built`, `sqft`, `zip`, `lat`, `lon`, `hold_period_years`, `current_monthly_rent`, `lease_start`, `lease_end`, `month_to_month`, `lease_current`; PK `(snapshot_id, property_id)`, composite FK to the snapshot property |
+| `public.fund_snapshot_property_periods` (new) | `snapshot_id`, `property_id`, `period`, `period_start`, `period_end`, `egi`, `property_tax`, `insurance`, `opex`, `noi`, `capex`, `noi_after_capex`, `potential_rent`, `collection_rate`, `noi_yield`, `annualized_yield`; PK `(snapshot_id, property_id, period)`, composite FK to the snapshot property |
 | `public.fund_snapshot_latest` (view) | Newest `exported_at` per fund, breaking ties by descending `snapshot_id`; loading an older export does not replace a newer one |
 
-`public.load_fund_snapshot(payload jsonb) RETURNS bigint` validates exact v2 keys
+`public.load_fund_snapshot(payload jsonb) RETURNS bigint` validates exact v3 keys
 at every level, reporting states, types, dates, amounts, counts and TTM windows,
-then inserts the header, metrics and properties atomically. A rejection rolls
+then inserts the header, metrics, properties, details and periods atomically. A rejection rolls
 back all rows for that load. It returns the new `snapshot_id`. The function uses
 invoker privileges and is not executable by PUBLIC; the database owner can run
 it. `source_label` is fixed load metadata, not an extra payload field. The
-publisher reconstructs `schemaVersion: 2` and does not expose load metadata.
-Applying the DDL again preserves existing rows and replaces the view/function.
+publisher uses the stored `schema_version` and does not expose load metadata.
+
+**Upgrading the existing v2 database:** re-apply the DDL before loading. It uses
+`CREATE TABLE IF NOT EXISTS`, `ADD COLUMN IF NOT EXISTS`, and
+`CREATE OR REPLACE VIEW/FUNCTION`. Existing headers receive version 2; their rows
+are preserved. New loads explicitly write version 3. The version column is appended
+to the latest view so replacement preserves existing view columns. Repeated DDL
+applications preserve both v2 and v3 snapshots. Publishing a latest v2 snapshot is
+rejected by the v3 parser and preserves the previous file; it never relabels old
+rows as a complete v3 report. Run a fresh v3 load, then publish, rebuild and redeploy.
 
 ### Owner setup and two-step run
 
@@ -178,7 +188,7 @@ printing them. Do not enable shell tracing. Vite env-file loading is disabled,
 so builds and local route tests do not read `.env*` files.
 
 ```sh
-# One-time schema apply: owner action, target is obk_lp.
+# Initial setup OR v2-to-v3 upgrade: owner action, target is obk_lp.
 set -a
 . ./.env.lp-snapshot
 set +a
@@ -222,7 +232,7 @@ children. Each child gets `PGCONNECT_TIMEOUT=5` and a controlled `PGOPTIONS`:
 No connection settings or database error details are logged.
 
 Cockpit reads retain the existing role gate: no superuser, role/database creation,
-replication, RLS bypass, or table/column writes on the five source tables. The
+replication, RLS bypass, or table/column writes on all seven source tables. The
 existing `obk_reader` kind of role needs CONNECT, USAGE on `public` and
 `obk_merger`, and SELECT on the columns below. The source-only admin override is
 for local demos. Publishing refuses superusers even with the override set, and
@@ -234,7 +244,7 @@ and a random dollar-quote tag checked against the validated payload.
 
 Publishing accepts an existing parent directory outside the repository, or the
 exact gitignored `public/lp-data/` directory (resolved through symlinks). It writes
-a mode-0600 temporary file and atomically renames it only after v2 validation;
+a mode-0600 temporary file and atomically renames it only after v3 validation;
 failures preserve the previous file. Snapshots are never committed. Builds include
 the file only when the owner publishes it into `public/lp-data/`.
 
@@ -284,59 +294,67 @@ merger run's `as_of_date`, falling back to `max(period_end)`; it is never the ex
 date. Recorded property statuses are read at export time. Capital recycling rate,
 stabilized homes, stabilization rate, and refinance pipeline have no approved
 source and appear together in one source-note sentence, outside the summary grid.
-No per-property operating fields are exported.
+The v3 snapshot also carries the two per-property periods listed below.
 
-### Exact acquisition columns
+### Exact cockpit columns read (both schemas)
 
-Read-only source review: the adjacent cockpit's `pipeline/merger_model/schema.py`,
-`apps/cockpit_api/app/sql/read_models.py` (`LATEST_KPIS`), and
-`apps/cockpit_api/app/features/portfolio/service.py`. No database was queried for
-task 3. These are **every application column read** by `scripts/fund-iii.sql`,
-including joins, filters, and ordering:
+These are **every application column read** by `scripts/fund-iii.sql`, including
+joins, filters and ordering. Task 6 uses the production column contract recorded
+in `../docs/codex-tasks.md`; no database was connected during implementation.
 
-| Schema / table | Column | Purpose / JSON field |
+| Schema / table | Exact columns read | Purpose |
 |---|---|---|
-| `public.funds` | `fund_name` | Require exactly one `Fund III` row; internal `fundCount` is not exported |
-| `public.properties` | `property_id` | Active filter, joins, ordering, `propertyId` |
-| `public.properties` | `address` | `address`, directory ordering |
-| `public.properties` | `status` | Active filter, occupied count, `status` |
-| `public.properties` | `purchase_date` | Legacy fallback for `purchaseDate` |
-| `public.properties` | `purchase_price` | Legacy fallback for `purchasePrice` and acquisition total |
-| `public.properties` | `total_renovation_cost` | Legacy fallback for `renovationCost` and renovation total |
-| `public.properties` | `total_capitalization` | Legacy fallback for `totalCapitalization` and fund capitalization / yield denominator |
-| `obk_merger.property_capitalization` | `property_id` | Join; presence determines `costFromMergerModel` |
-| `obk_merger.property_capitalization` | `purchase_date` | Primary `purchaseDate` |
-| `obk_merger.property_capitalization` | `purchase_price` | Primary `purchasePrice` and acquisition total; includes closing costs |
-| `obk_merger.property_capitalization` | `renovation_cost` | Primary `renovationCost` and renovation total |
-| `obk_merger.property_capitalization` | `total_cost` | Primary `totalCapitalization`, fund capitalization / yield denominator |
-| `obk_merger.property_period_metrics` | `property_id` | Join to the same active property set |
-| `obk_merger.property_period_metrics` | `period_label` | Exact `trailing_12_mo` filter |
-| `obk_merger.property_period_metrics` | `period_start` | `ttmPeriodStart`, consistent-window check |
-| `obk_merger.property_period_metrics` | `period_end` | `ttmPeriodEnd`, consistent-window check, fallback `summaryAsOf` |
-| `obk_merger.property_period_metrics` | `rent_egi_collected` | `ttmRentCollected` numerator / sum |
-| `obk_merger.property_period_metrics` | `collection_rate` | `ttmCollectionRate` numerator |
-| `obk_merger.property_period_metrics` | `potential_rent` | `ttmCollectionRate` denominator |
-| `obk_merger.property_period_metrics` | `noi` | `ttmNoi` sum and `ttmNoiYield` numerator |
-| `obk_merger.merger_run_log` | `run_id` | Select latest run; not exported |
-| `obk_merger.merger_run_log` | `as_of_date` | `costAsOf`, primary `summaryAsOf` |
+| `public.funds` | `fund_name` | Require exactly one Fund III row; internal `fundCount` is not published |
+| `public.properties` | `property_id`, `address`, `status`, `purchase_date`, `purchase_price`, `total_renovation_cost`, `total_capitalization`, `bedrooms`, `bathrooms`, `year_built`, `sqft`, `zip_code`, `lat`, `lon` | Active property set, legacy cost/date fallback, asset facts and coordinates |
+| `public.leases` | `property_id`, `monthly_rent`, `lease_start`, `lease_end`, `is_month_to_month`, `lease_number` | Latest lease by `lease_start DESC NULLS LAST, lease_number DESC`; lease number is ordering only and is never exported |
+| `obk_merger.property_capitalization` | `property_id`, `purchase_date`, `purchase_price`, `renovation_cost`, `total_cost` | Merger cost basis; purchase includes closing costs |
+| `obk_merger.property_period_metrics` | `property_id`, `period_label`, `period_start`, `period_end`, `rent_egi_collected`, `potential_rent`, `collection_rate`, `property_tax`, `insurance`, `opex`, `noi`, `capex`, `noi_after_capex`, `noi_yield`, `annualized_yield` | Fund TTM rollup and property `trailing_12_mo` / `since_acquired` periods |
+| `obk_merger.property_overview` | `property_id`, `hold_period_years` | Hold duration; historical `fund_series` is not read |
+| `obk_merger.merger_run_log` | `run_id`, `as_of_date` | Latest cost as-of; run ID is ordering only and is never exported |
 
-The loader's source role check also reads `pg_catalog.pg_roles` columns
-`rolname`, `rolsuper`, `rolcreatedb`, `rolcreaterole`, `rolreplication`, and
-`rolbypassrls`, and checks table/column write privileges on all five application
-tables with `has_table_privilege` and `has_any_column_privilege`. These role
-attributes never enter the snapshot. Neither `fund_id`, `computed_at`, nor stored
-`noi_yield` is read: fund ratios are calculated from sums (the per-home
-`collection_rate` is only used to recover rent collected). No investor, tenant, lease, transaction, bank, or GP-only fields are
-selected; no `SELECT *` is used. The database name comes solely from the owner's
-source connection (`OBK_COCKPIT_PGDATABASE` or `OBK_COCKPIT_PGSERVICE`), never a hard-coded database name.
+**Never read these lease identity columns:** `tenant_name`, `tenant_phone`,
+`pha_id`, `hap_number`, `landlord_id`, `housing_authority`, `source_sheet_row`.
+The unused `lease_type`, `security_deposit`, `sec8_rent`, `tenant_rent`, and
+`program_type` columns are also excluded. No tenant or investor identities are
+selected or stored. No `SELECT *`, transactions, bank records or GP endpoints.
 
-### Snapshot schema v2
+The production period query does not read `fcf`, `rent_collected` or
+`capital_reserves` (test-schema-only columns). Property EGI is `rent_egi_collected`;
+“NOI less CapEx” is the supplied `noi_after_capex`, without a client recalculation.
+Property `collectionRate`, `noiYield` and `annualizedYield` multiply the source
+ratios by 100 into percentage points. Missing values remain null; negative period
+results and yields are valid. Fund collection rate retains its existing weighted
+calculation from `collection_rate × potential_rent`.
 
-- Top level: `schemaVersion` (literal `2`), `fundName` (literal `Fund III`),
-  `exportedAt` (UTC timestamp), `summaryAsOf` (ISO date or null), `properties`, `summary`.
+The source role gate also reads `pg_catalog.pg_roles`: `rolname`, `rolsuper`,
+`rolcreatedb`, `rolcreaterole`, `rolreplication`, `rolbypassrls`. It checks table and
+column write privileges on all seven application tables using
+`has_table_privilege` and `has_any_column_privilege`; role attributes never enter
+the snapshot. The publisher checks `rolname` and `rolsuper` only. The cockpit
+reader needs SELECT on the allowlisted columns in `public` and `obk_merger`,
+including the new lease and overview reads. Database names come solely from the
+owner's connection environment, never from SQL literals.
+
+### Snapshot schema v3
+
+- Top level: `schemaVersion` (literal `3`), `fundName` (literal `Fund III`),
+  `exportedAt` (UTC timestamp), `summaryAsOf` (ISO date or null), `properties`, `propertyDetails`, `propertyPeriods`, `summary`.
 - Each `properties` row: `propertyId`, `address`, `status`, `purchaseDate`,
   `purchasePrice`, `renovationCost`, `totalCapitalization`, `costFromMergerModel`.
   Status, date, and amounts may be null; cost source is a required boolean.
+- Each `propertyDetails` row: `propertyId`, `bedrooms`, `bathrooms`, `yearBuilt`,
+  `sqft`, `zip`, `lat`, `lon`, `holdPeriodYears`, `currentMonthlyRent`, `leaseStart`,
+  `leaseEnd`, `monthToMonth`, `leaseCurrent`. Exactly one per snapshot property.
+  All fields except the ID may be null; lease flags are boolean or null. Lat/lon
+  are bounded to ±90/±180. Asset counts/amounts are nonnegative; bedrooms/year are
+  integers. Lease dates are ISO dates with start no later than end.
+- Each `propertyPeriods` row: `propertyId`, `period`, `periodStart`, `periodEnd`,
+  `egi`, `propertyTax`, `insurance`, `opex`, `noi`, `capex`, `noiAfterCapex`,
+  `potentialRent`, `collectionRate`, `noiYield`, `annualizedYield`. The source emits
+  two per property by LEFT JOINing `trailing_12_mo` and `since_acquired`; missing
+  source periods have null dates and measures. The parser allows at most one of
+  each period per property and rejects orphan IDs. Dates must be paired and ordered;
+  non-null measures require dates. Measures are finite signed numbers or null.
 - `summary`: `homes`, `occupiedHomes`, `occupancy`, `totalAcquisitionCost`,
   `totalRenovationCost`, `totalCapitalization`, `ttmRentCollected`, `ttmNoi`,
   `ttmNoiYield`, `ttmCollectionRate`, `ttmPeriodStart`, `ttmPeriodEnd`, `costAsOf`.
@@ -346,11 +364,11 @@ source connection (`OBK_COCKPIT_PGDATABASE` or `OBK_COCKPIT_PGSERVICE`), never a
   capped at 100 and collection rate at 200, in percentage points. Reported TTM
   measures require an ordered date window; reported summaries require `summaryAsOf`.
 
-Unknown or missing fields fail closed at every report level. Version-1 snapshots
+Unknown or missing fields fail closed at every report level. Version-1 and v2 snapshots
 are rejected: the owner must regenerate the private snapshot with
 `npm run snapshot:load` and `npm run snapshot:publish`, then rebuild and redeploy
 (`npm run deploy`) through the existing password-gated preview. Do not commit the
-snapshot, credentials, or investor data. Task 4 validation uses synthetic records,
+snapshot, credentials, or investor data. Task 6 validation uses synthetic records,
 DDL text inspection and a fake `psql` executable only; no database was connected.
 Schema application, live load/publish and deployment remain owner actions.
 
@@ -374,10 +392,50 @@ the local Vite file route is not part of the production build.
 `npm run test:fund-data` verifies synthetic value states, rejected/extra fields,
 exact photo matching, loader/publisher subprocess behavior and atomic preservation, and
 the actual local HTTP route (success, absent/invalid report, cross-origin denial).
-It also covers schema v2, a synthetic PID 38 fallback, >100% collection rates,
+It also covers schema v3, a synthetic PID 38 fallback, >100% collection rates,
 TTM dates, connection isolation, source-only role override, publisher superuser
 rejection, dollar-quote guard, DDL/parser allowlist parity, and rendering the sourced summary grid and fallback hint.
 `npm run build` checks TypeScript and builds production assets. Tests use no real
-DB connection or real records and are not bundled. The remaining stage and
-property-detail financial templates are outside task 3. `npm run check:worker`
+DB connection or real records and are not bundled. The remaining stage templates are outside task 6. `npm run check:worker`
 typechecks the existing preview gate.
+
+### Property reports and maps (task 6)
+
+`PropertyDetail` joins the canonical photo mapping's `propertyId` to the three
+snapshot arrays through `useFundSnapshot`. Status and latest recorded monthly
+rent also appear on directory cards. `Rented` displays as “Occupied”; other
+recorded statuses remain literal. Unknown facts and amounts display “Not
+provided”, while a supplied zero displays as zero. Current homes use the
+owner-confirmed merged owner “Obelisk Fund III LLC”.
+
+`leaseCurrent` uses the snapshot `summaryAsOf` (merger run date, falling back to
+TTM end), not today's browser clock: `lease_end >= as-of OR is_month_to_month`.
+SQL's three-valued logic preserves null when currency is unknown; a known current
+end or true month-to-month flag yields true. The parser and loader check the same
+rule. The UI gives month-to-month precedence, otherwise shows the current end or
+“Expired {end}; renewal not yet recorded”. Rent remains the latest recorded lease
+amount even when that lease has expired; it is not a claim of current collections.
+Resident information is not shown. Monthly financial history is outside the snapshot.
+
+All mapped coordinates use **OpenStreetMap**, with a bounding box of longitude
+±0.004 and latitude ±0.003, a marker, lazy loading, `referrerPolicy="no-referrer"`,
+the full address caption and a plain OpenStreetMap link. If either coordinate is
+null, show the address and “Map pending geocoding”; there is no guessed geocoding
+or special case for 4401 Avenue I.
+
+No Google map or Google service is used at runtime (mainland-China reachability
+requirement). The shared HTML's old Google Fonts links were removed; Archivo and
+IBM Plex Mono are served locally from `public/fonts/`, preserving the typefaces.
+Unmodified font files and their OFL licenses come from the upstream
+[Archivo directory](https://github.com/google/fonts/tree/main/ofl/archivo) and
+[IBM Plex Mono directory](https://github.com/google/fonts/tree/main/ofl/ibmplexmono).
+
+Task 6 validation: `npm run build`, `npm run test:fund-data` (15 tests), and
+`npm run check:worker`. Tests exercise actual React server rendering and the local
+HTTP data route with synthetic snapshots, plus parser/DDL/publisher field parity,
+lease states, zero/missing/negative values, excluded columns and map URLs. DDL
+idempotence is checked structurally only; no SQL was executed against a database.
+No `.env*` files were read. Browser screenshots were explicitly skipped because
+Chrome is unavailable in the sandbox. The owner must re-apply the schema, load
+and publish v3, review live reports/maps, then rebuild and deploy through the
+existing preview gate. Existing v2 files are rejected until regenerated.

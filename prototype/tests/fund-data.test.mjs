@@ -39,10 +39,89 @@ const summary = () => ({
   ttmPeriodEnd: reported("2026-06-30"),
   costAsOf: reported("2026-06-30"),
 });
+const detailsRow = (propertyId, values = {}) => ({
+  propertyId,
+  bedrooms: null,
+  bathrooms: null,
+  yearBuilt: null,
+  sqft: null,
+  zip: null,
+  lat: null,
+  lon: null,
+  holdPeriodYears: null,
+  currentMonthlyRent: null,
+  leaseStart: null,
+  leaseEnd: null,
+  monthToMonth: null,
+  leaseCurrent: null,
+  ...values,
+});
+const periodRow = (propertyId, period, values = {}) => ({
+  propertyId,
+  period,
+  periodStart: null,
+  periodEnd: null,
+  egi: null,
+  propertyTax: null,
+  insurance: null,
+  opex: null,
+  noi: null,
+  capex: null,
+  noiAfterCapex: null,
+  potentialRent: null,
+  collectionRate: null,
+  noiYield: null,
+  annualizedYield: null,
+  ...values,
+});
 const directory = {
   fundCount: 1,
   summaryAsOf: "2026-06-30",
   summary: summary(),
+  propertyDetails: [
+    detailsRow(1, {
+      bedrooms: 3,
+      bathrooms: 2,
+      yearBuilt: 1950,
+      sqft: 1200,
+      zip: "00000",
+      lat: 33.5,
+      lon: -86.9,
+      holdPeriodYears: 1.5,
+      currentMonthlyRent: 0,
+      leaseStart: "2025-01-01",
+      leaseEnd: "2026-06-30",
+      monthToMonth: false,
+      leaseCurrent: true,
+    }),
+    detailsRow(38),
+  ],
+  propertyPeriods: [1, 38].flatMap((id) =>
+    ["trailing_12_mo", "since_acquired"].map((period) =>
+      periodRow(
+        id,
+        period,
+        id === 1
+          ? {
+              periodStart:
+                period === "trailing_12_mo" ? "2025-07-01" : "2025-01-01",
+              periodEnd: "2026-06-30",
+              egi: 100,
+              propertyTax: 20,
+              insurance: 10,
+              opex: 80,
+              noi: -10,
+              capex: 5,
+              noiAfterCapex: -15,
+              potentialRent: 90,
+              collectionRate: 111.1,
+              noiYield: -5,
+              annualizedYield: period === "since_acquired" ? -3.3 : null,
+            }
+          : {},
+      ),
+    ),
+  ),
   properties: [
     {
       propertyId: 1,
@@ -67,9 +146,9 @@ const directory = {
   ],
 };
 
-test("v2 export preserves merger/fallback rows, zeros, missing and not-reported values", () => {
+test("v3 export preserves merger/fallback rows, zeros, missing and not-reported values", () => {
   const data = makeSnapshot(directory);
-  assert.equal(data.schemaVersion, 2);
+  assert.equal(data.schemaVersion, 3);
   assert.equal(data.properties[0].purchasePrice, 0);
   assert.equal(data.properties[0].costFromMergerModel, true);
   assert.equal(data.properties[1].propertyId, 38);
@@ -109,8 +188,13 @@ test("v2 export preserves merger/fallback rows, zeros, missing and not-reported 
   empty.homes = reported(0);
   empty.occupiedHomes = reported(0);
   assert.equal(
-    makeSnapshot({ ...directory, properties: [], summary: empty }).properties
-      .length,
+    makeSnapshot({
+      ...directory,
+      properties: [],
+      propertyDetails: [],
+      propertyPeriods: [],
+      summary: empty,
+    }).properties.length,
     0,
   );
 });
@@ -570,7 +654,7 @@ let sql = ''; process.stdin.on('data', chunk => sql += chunk); process.stdin.on(
  } else if (process.env.PGHOST === 'synthetic_target') {
   if (process.env.PGUSER !== 'owner' || process.env.PGDATABASE !== 'synthetic_lp' || process.env.PGPASSWORD !== 'synthetic-target-password' || process.env.PGOPTIONS !== '-c default_transaction_read_only=off' || !sql.includes('COMMIT;') || sql.includes('obk_merger')) process.exit(4);
   const match = sql.match(/load_fund_snapshot\\(\\$(obk_lp_[a-f0-9]+)\\$([\\s\\S]*)\\$\\1\\$::jsonb\\)/);
-  if (!match || JSON.parse(match[2]).schemaVersion !== 2) process.exit(5);
+  if (!match || JSON.parse(match[2]).schemaVersion !== 3) process.exit(5);
   fs.writeFileSync(${JSON.stringify(marker)}, match[2]);
   console.log('42');
  } else process.exit(6);
@@ -622,7 +706,7 @@ let sql = ''; process.stdin.on('data', chunk => sql += chunk); process.stdin.on(
   }
 });
 
-test("schema DDL and v2 parser have the exact same property and metric allowlists", async () => {
+test("schema DDL and v3 parser have the exact same property and metric allowlists", async () => {
   const ddl = await readFile(
     new URL("../scripts/lp-snapshot-schema.sql", import.meta.url),
     "utf8",
@@ -647,6 +731,53 @@ test("schema DDL and v2 parser have the exact same property and metric allowlist
     .map((match) => match[1])
     .sort();
   assert.deepEqual(array("property_keys"), properties);
+  assert.deepEqual(
+    array("top_keys"),
+    Object.keys(makeSnapshot(directory)).sort(),
+  );
+  const publisher = await readFile(
+    new URL("../scripts/lp-snapshot-publish.mjs", import.meta.url),
+    "utf8",
+  );
+  for (const [type, key, suffix] of [
+    ["PropertyDetails", "detail_keys", "details"],
+    ["PropertyPeriod", "period_keys", "periods"],
+  ]) {
+    const fields = [
+      ...ts
+        .match(new RegExp(`interface ${type} \\{([\\s\\S]*?)\\n\\}`))[1]
+        .matchAll(/^  (\w+):/gm),
+    ]
+      .map((m) => m[1])
+      .sort();
+    assert.deepEqual(array(key), fields);
+    const body = ddl.match(
+      new RegExp(
+        `CREATE TABLE IF NOT EXISTS public.fund_snapshot_property_${suffix} \\(([\\s\\S]*?)\\n\\);`,
+      ),
+    )[1];
+    const columns = [
+      ...body.matchAll(/^  (\w+) (?:bigint|text|date|numeric|boolean)\b/gm),
+    ]
+      .map((m) => m[1])
+      .filter((k) => k !== "snapshot_id");
+    assert.deepEqual(
+      columns
+        .map((k) => k.replace(/_([a-z])/g, (_, letter) => letter.toUpperCase()))
+        .sort(),
+      fields,
+    );
+    assert.match(
+      body,
+      /FOREIGN KEY \(snapshot_id, property_id\) REFERENCES public.fund_snapshot_properties/,
+    );
+    for (const key of fields) assert(publisher.includes(`'${key}', p.`), key);
+  }
+  assert.match(ddl, /ADD COLUMN IF NOT EXISTS schema_version integer/);
+  assert.match(ddl, /NOT NULL DEFAULT 2 CHECK \(schema_version IN \(2, 3\)\)/);
+  assert.match(publisher, /'schemaVersion', s.schema_version/);
+  assert(!/DROP TABLE|TRUNCATE|DELETE FROM/i.test(ddl));
+
   assert.deepEqual(array("metric_keys"), [...metricKeys, ...dateKeys].sort());
   assert.deepEqual(array("date_keys"), [...dateKeys].sort());
   const metricCheck = ddl.match(
@@ -672,4 +803,328 @@ test("schema DDL and v2 parser have the exact same property and metric allowlist
     ddl,
     /FUNCTION public\.load_fund_snapshot\(payload jsonb\)\s+RETURNS bigint/,
   );
+});
+
+test("v3 details and periods reject extra, missing, orphaned, duplicate and malformed data", () => {
+  const data = makeSnapshot(directory);
+  assert.equal(data.propertyDetails[0].currentMonthlyRent, 0);
+  assert.equal(data.propertyDetails[1].currentMonthlyRent, null);
+  assert.equal(data.propertyPeriods[0].noiAfterCapex, -15);
+  assert.equal(data.propertyPeriods[1].annualizedYield, -3.3);
+  const invalidPeriod = structuredClone(data);
+  invalidPeriod.propertyPeriods[0].period = ["trailing_12_mo"];
+  assert.throws(() => parseFundSnapshot(invalidPeriod));
+  for (const mutate of [
+    (d) => {
+      d.schemaVersion = 2;
+    },
+    (d) => {
+      delete d.propertyDetails;
+    },
+    (d) => {
+      d.propertyDetails.pop();
+    },
+    (d) => {
+      d.propertyDetails.push(d.propertyDetails[0]);
+    },
+    (d) => {
+      d.propertyDetails[0].propertyId = 999;
+    },
+    (d) => {
+      d.propertyPeriods[0].propertyId = 999;
+    },
+    (d) => {
+      d.propertyPeriods.push(d.propertyPeriods[0]);
+    },
+    (d) => {
+      d.propertyPeriods[0].period = "ytd";
+    },
+    (d) => {
+      d.propertyDetails[0].unexpected = "Rejected";
+    },
+    (d) => {
+      d.propertyPeriods[0].unexpected = "Rejected";
+    },
+    (d) => {
+      delete d.propertyPeriods[0].egi;
+    },
+    (d) => {
+      delete d.propertyDetails[0].lat;
+    },
+    (d) => {
+      d.propertyDetails[0].lat = 91;
+    },
+    (d) => {
+      d.propertyDetails[0].lon = -181;
+    },
+    (d) => {
+      d.propertyDetails[0].lat = "33.5";
+    },
+    (d) => {
+      d.propertyDetails[0].bedrooms = 2.5;
+    },
+    (d) => {
+      d.propertyDetails[0].currentMonthlyRent = -1;
+    },
+    (d) => {
+      d.propertyDetails[0].monthToMonth = "false";
+    },
+    (d) => {
+      d.propertyDetails[0].leaseCurrent = false;
+    },
+    (d) => {
+      d.propertyDetails[0].leaseStart = "2026-02-30";
+    },
+    (d) => {
+      d.propertyDetails[0].leaseStart = "2027-01-01";
+    },
+    (d) => {
+      d.propertyPeriods[0].noi = Infinity;
+    },
+    (d) => {
+      d.propertyPeriods[0].egi = "0";
+    },
+    (d) => {
+      d.propertyPeriods[0].periodEnd = "2026-02-30";
+    },
+    (d) => {
+      d.propertyPeriods[0].periodStart = "2027-01-01";
+    },
+    (d) => {
+      d.propertyPeriods[0].periodStart = null;
+    },
+    (d) => {
+      d.propertyPeriods[0].periodStart = d.propertyPeriods[0].periodEnd = null;
+    },
+  ]) {
+    const invalid = structuredClone(data);
+    mutate(invalid);
+    assert.throws(() => parseFundSnapshot(invalid));
+  }
+  for (const end of ["2026-06-29", "2026-06-30", "2026-07-01", null]) {
+    for (const mtm of [true, false, null]) {
+      const sample = structuredClone(data);
+      sample.propertyDetails[0].leaseEnd = end;
+      sample.propertyDetails[0].monthToMonth = mtm;
+      sample.propertyDetails[0].leaseCurrent =
+        mtm === true || (end !== null && end >= data.summaryAsOf)
+          ? true
+          : mtm === false && end !== null
+            ? false
+            : null;
+      assert.doesNotThrow(() => parseFundSnapshot(sample));
+    }
+  }
+  assert.doesNotThrow(() =>
+    parseFundSnapshot({ ...data, propertyPeriods: [] }),
+  );
+});
+
+test("v3 source SQL excludes private and test-only columns and uses only the two requested periods", async () => {
+  const sql = await readFile(
+    new URL("../scripts/fund-iii.sql", import.meta.url),
+    "utf8",
+  );
+  const executable = sql.replace(/--[^\n]*/g, "");
+  const index = await readFile(
+    new URL("../index.html", import.meta.url),
+    "utf8",
+  );
+  const css = await readFile(
+    new URL("../src/styles.css", import.meta.url),
+    "utf8",
+  );
+  assert(!/https?:\/\/[^\s"']*(?:google|gstatic)/i.test(index + css));
+  for (const font of [
+    "Archivo.ttf",
+    "IBMPlexMono-Regular.ttf",
+    "IBMPlexMono-Medium.ttf",
+  ]) {
+    assert(css.includes(`/fonts/${font}`));
+    const bytes = await readFile(
+      new URL(`../public/fonts/${font}`, import.meta.url),
+    );
+    assert.equal(bytes.readUInt32BE(0), 0x00010000);
+  }
+
+  for (const column of [
+    "tenant_name",
+    "tenant_phone",
+    "pha_id",
+    "hap_number",
+    "landlord_id",
+    "housing_authority",
+    "source_sheet_row",
+    "fcf",
+    "capital_reserves",
+  ])
+    assert(!new RegExp(`\\b${column}\\b`, "i").test(executable), column);
+  assert(!/m\.rent_collected\b/.test(executable));
+  assert(!/SELECT\s+(?:\w+\.)?\*/i.test(executable));
+  assert.match(
+    sql,
+    /ORDER BY lease_start DESC NULLS LAST, lease_number DESC LIMIT 1/,
+  );
+  assert.match(
+    sql,
+    /CROSS JOIN \(VALUES \('trailing_12_mo'\), \('since_acquired'\)\)/,
+  );
+  for (const column of [
+    "lat",
+    "lon",
+    "zip_code",
+    "bedrooms",
+    "bathrooms",
+    "year_built",
+    "sqft",
+  ])
+    assert(sql.includes(`p.${column}`));
+  for (const column of ["collection_rate", "noi_yield", "annualized_yield"])
+    assert(sql.includes(`100.0 * m.${column}`));
+});
+
+test("property reports render snapshot values, lease states, missing values and OpenStreetMap", async () => {
+  const result = await build({
+    stdin: {
+      contents: `
+        const React = require('react');
+        const { renderToStaticMarkup } = require('react-dom/server');
+        const { MemoryRouter, Routes, Route } = require('react-router-dom');
+        const { PropertyDetail, PropertyDirectory } = require('./src/PropertyPages.tsx');
+        const { setReport } = require('./src/useFundSnapshot');
+        module.exports = (report, path) => {
+          setReport(report);
+          return renderToStaticMarkup(React.createElement(MemoryRouter, { initialEntries: [path] },
+            React.createElement(Routes, null,
+              React.createElement(Route, { path: '/property-performance', element: React.createElement(PropertyDirectory) }),
+              React.createElement(Route, { path: '/property-performance/:propertyId', element: React.createElement(PropertyDetail) }))));
+        };
+      `,
+      resolveDir: process.cwd(),
+    },
+    bundle: true,
+    platform: "node",
+    format: "cjs",
+    packages: "external",
+    write: false,
+    plugins: [
+      {
+        name: "synthetic-property-report",
+        setup(plugin) {
+          plugin.onResolve({ filter: /useFundSnapshot$/ }, () => ({
+            path: "report",
+            namespace: "synthetic",
+          }));
+          plugin.onLoad({ filter: /.*/, namespace: "synthetic" }, () => ({
+            contents: `let report; export const setReport = value => { report = value; }; export const useFundSnapshot = () => report;`,
+          }));
+          plugin.onLoad({ filter: /property-mapping\.json$/ }, () => ({
+            loader: "json",
+            contents: JSON.stringify(
+              [1, 38].map((id) => ({
+                id: `synthetic-${id}`,
+                propertyId: id,
+                address: `Synthetic home ${id}`,
+                location: "Synthetic city",
+                cockpitAddress: null,
+                photo: "/synthetic.jpg",
+                status: "current",
+              })),
+            ),
+          }));
+        },
+      },
+    ],
+  });
+  const module = { exports: null };
+  new Function("require", "module", result.outputFiles[0].text)(
+    createRequire(import.meta.url),
+    module,
+  );
+  const render = (data, id = 1) =>
+    module.exports(
+      { state: "ready", data: parseFundSnapshot(data) },
+      `/property-performance/synthetic-${id}`,
+    );
+  const data = makeSnapshot(directory);
+  const html = render(data);
+  for (const value of [
+    "Occupied",
+    "$0",
+    "3 bd · 2 ba",
+    "1950",
+    "1,200 sq ft",
+    "Annualized NOI yield since acquisition",
+    "-3.3%",
+    "-$15",
+    "NOI less CapEx",
+    "Current through 2026-06-30",
+    "Obelisk Fund III LLC",
+    "111.1%",
+    "Monthly history is not part of the snapshot",
+    "2025-07-01 to 2026-06-30",
+    "2025-01-01 to 2026-06-30",
+  ])
+    assert(html.includes(value), value);
+  const bbox = `${-86.9 - 0.004},${33.5 - 0.003},${-86.9 + 0.004},${33.5 + 0.003}`;
+  assert(
+    html.includes(
+      `https://www.openstreetmap.org/export/embed.html?bbox=${bbox}&amp;layer=mapnik&amp;marker=33.5,-86.9`,
+    ),
+  );
+  assert(html.includes('referrerPolicy="no-referrer"'));
+  assert(html.includes('loading="lazy"'));
+  assert(
+    html.includes(
+      "https://www.openstreetmap.org/?mlat=33.5&amp;mlon=-86.9#map=17/33.5/-86.9",
+    ),
+  );
+  for (const forbidden of [
+    "google.com",
+    "Tenant(s)",
+    "Lease type",
+    "Security deposit",
+    "Section 8 amount",
+    "Tenant portion",
+    "Property type",
+    "Cumulative cash-on-cash",
+    "Financial history pending",
+  ])
+    assert(!html.includes(forbidden), forbidden);
+  const missing = render(data, 38);
+  assert(missing.includes("Map pending geocoding"));
+  assert(missing.includes("Not provided"));
+  assert(!missing.includes("<iframe"));
+  assert(!missing.includes("$0"));
+  const expired = structuredClone(data);
+  expired.propertyDetails[0].leaseEnd = "2026-01-01";
+  expired.propertyDetails[0].leaseCurrent = false;
+  assert(
+    render(expired).includes("Expired 2026-01-01; renewal not yet recorded"),
+  );
+  expired.propertyDetails[0].monthToMonth = true;
+  expired.propertyDetails[0].leaseCurrent = true;
+  assert(render(expired).includes("Month-to-month"));
+  const noCoordinates = structuredClone(data);
+  noCoordinates.propertyDetails[0].lat = null;
+  assert(render(noCoordinates).includes("Map pending geocoding"));
+  for (const status of ["Leasing", "Pending Sec 8"]) {
+    const sample = structuredClone(data);
+    sample.properties[0].status = status;
+    assert(render(sample).includes(status));
+  }
+  const cards = module.exports(
+    { state: "ready", data },
+    "/property-performance",
+  );
+  assert(cards.includes("Rented"));
+  assert(cards.includes("Current rent: $0"));
+  for (const state of ["loading", "error", "unavailable"]) {
+    const empty = module.exports(
+      { state, data: null },
+      "/property-performance/synthetic-1",
+    );
+    assert(empty.includes("Not provided"));
+    assert(!empty.includes("$0"));
+  }
 });

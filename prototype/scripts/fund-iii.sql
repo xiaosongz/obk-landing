@@ -4,6 +4,7 @@
 -- fund_id is the original acquisition vehicle, so keep every active property.
 WITH active_properties AS (
   SELECT p.property_id, p.address, p.status,
+         p.bedrooms, p.bathrooms, p.year_built, p.sqft, p.zip_code, p.lat, p.lon,
          COALESCE(c.purchase_date, p.purchase_date) AS purchase_date,
          COALESCE(c.purchase_price, p.purchase_price) AS purchase_price,
          COALESCE(c.renovation_cost, p.total_renovation_cost) AS renovation_cost,
@@ -50,6 +51,43 @@ SELECT json_build_object(
       'costFromMergerModel', p.cost_from_merger_model
     ) ORDER BY p.address, p.property_id)
     FROM active_properties p
+  ), '[]'::json),
+  'propertyDetails', COALESCE((
+    SELECT json_agg(json_build_object(
+      'propertyId', p.property_id,
+      'bedrooms', p.bedrooms, 'bathrooms', p.bathrooms,
+      'yearBuilt', p.year_built, 'sqft', p.sqft, 'zip', p.zip_code,
+      'lat', p.lat, 'lon', p.lon, 'holdPeriodYears', o.hold_period_years,
+      'currentMonthlyRent', l.monthly_rent,
+      'leaseStart', l.lease_start, 'leaseEnd', l.lease_end,
+      'monthToMonth', l.is_month_to_month,
+      'leaseCurrent', l.lease_end >= COALESCE((SELECT as_of_date FROM latest_run), r.period_end)
+        OR l.is_month_to_month
+    ) ORDER BY p.property_id)
+    FROM active_properties p
+    LEFT JOIN obk_merger.property_overview o USING (property_id)
+    LEFT JOIN LATERAL (
+      SELECT monthly_rent, lease_start, lease_end, is_month_to_month
+      FROM public.leases WHERE property_id = p.property_id
+      ORDER BY lease_start DESC NULLS LAST, lease_number DESC LIMIT 1
+    ) l ON true
+  ), '[]'::json),
+  'propertyPeriods', COALESCE((
+    SELECT json_agg(json_build_object(
+      'propertyId', p.property_id, 'period', requested.period,
+      'periodStart', m.period_start, 'periodEnd', m.period_end,
+      'egi', m.rent_egi_collected, 'propertyTax', m.property_tax,
+      'insurance', m.insurance, 'opex', m.opex, 'noi', m.noi,
+      'capex', m.capex, 'noiAfterCapex', m.noi_after_capex,
+      'potentialRent', m.potential_rent,
+      'collectionRate', 100.0 * m.collection_rate,
+      'noiYield', 100.0 * m.noi_yield,
+      'annualizedYield', 100.0 * m.annualized_yield
+    ) ORDER BY p.property_id, requested.period)
+    FROM active_properties p
+    CROSS JOIN (VALUES ('trailing_12_mo'), ('since_acquired')) requested(period)
+    LEFT JOIN obk_merger.property_period_metrics m
+      ON m.property_id = p.property_id AND m.period_label = requested.period
   ), '[]'::json),
   -- SQL SUM ignores absent inputs; all-null sums and undefined ratios stay
   -- missing, never zero. Mixed TTM windows are withheld, not combined.

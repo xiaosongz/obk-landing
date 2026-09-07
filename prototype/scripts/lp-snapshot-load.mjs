@@ -38,7 +38,7 @@ COMMIT;`,
 
 loadSnapshot().catch(() => {
   console.error(
-    "Snapshot load failed. Check private source/target connections, source read-only role, schema and v2 contract. No database details are printed.",
+    "Snapshot load failed. Check private source/target connections, source read-only role, schema and v3 contract. No database details are printed.",
   );
   process.exitCode = 1;
 });
