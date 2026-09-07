@@ -10,7 +10,8 @@ every current home. Task 3 (below) is implemented: the export reads the cockpit'
 merger-model cost basis and emits a sourced fund-level snapshot (schema v2). Task 4 (below) is implemented: the website reads only the `obk_lp` snapshot
 database (`npm run snapshot:load`, then `npm run snapshot:publish`). Task 5 (below) is implemented on branch `feat/design-polish` (phone layout verified
 with DevTools mobile emulation: document width 390px on all routes).
-**Task 6 (below) is open:** property report pages from the snapshot database.
+Task 6 (below) is implemented: property report pages read snapshot schema v3
+(details, lease terms, period metrics, coordinates); fonts are served locally.
 **Resolved 2026-09-07:** the address is 329 Valley Crest Drive; the photo file name
 "328 Valley Crest.png" is a typo. Confirmed against the August 2024 property-manager
 owner statement and the cockpit database records (address, aliases, bank review sheet,
