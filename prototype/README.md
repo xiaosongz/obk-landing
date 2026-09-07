@@ -32,7 +32,7 @@ The full business-process copy is retained in expandable reading sections. Illus
 ## Content and data boundaries
 
 - Curated business copy and process illustrations are in `src/reference-content.ts` and `public/images/`. Property photographs are in `public/images/properties/`, one per home, converted to 1600px JPEG from the owner's address-named photo library (shared drive `OBK Portal/Property Photos`). `src/property-mapping.json` links each photograph to its database record by address and property ID.
-- Funds I and II merged into Fund III; every current home is Fund III. The database's per-property fund column is the historical acquisition vehicle and is not shown to investors. One photo file (named 328 Valley Crest) was matched by street name to the database address 329 Valley Crest Drive; the owner should confirm which number is correct.
+- Funds I and II merged into Fund III; every current home is Fund III. The database's per-property fund column is the historical acquisition vehicle and is not shown to investors. 329 Valley Crest Drive was confirmed on 2026-09-07 against the August 2024 property-manager owner statement and the cockpit database; the source photo file name "328 Valley Crest.png" is a typo.
 - The investor account uses a fictional identity and illustrative capital amounts. Preferred-return/promote values and property financial cells remain unfilled. No personal investor record, tenant record, legal agreement, or screenshot financial table is imported.
 - The source login page was blank. The unsupplied featured-video slot is removed. The subscription-agreement link remains explicitly labeled as unsupplied.
 - Production must use authenticated server-side investor/fund authorization and the website’s own snapshot database, populated from approved cockpit financial read models by a GP-side job. Source narrative definitions need reconciliation with those models before displaying calculated results.
@@ -100,8 +100,8 @@ Manual acceptance checklist for the PR (screenshots stay gitignored):
 The sandbox makes `.git` read-only, so changes are left uncommitted. Owner handoff:
 complete the visual checklist, commit sections A/B/C/D separately with messages
 ending in `Claude-Session: https://claude.ai/code/session_01VD7qUYJqtrzS7ANe1L7bUT`,
-and push `feat/design-polish`. The existing 328 vs 329 Valley Crest confirmation
-remains with the owner; the mapping is unchanged.
+and push `feat/design-polish`. The Valley Crest address discrepancy was resolved
+on 2026-09-07; see `../docs/codex-tasks.md` for the supplied evidence.
 
 ## Canonical property/photo mapping
 

@@ -9,7 +9,11 @@ matched to database records. Funds I and II merged into Fund III, so the export 
 every current home. Task 3 (below) is implemented: the export reads the cockpit's
 merger-model cost basis and emits a sourced fund-level snapshot (schema v2). Task 4 (below) is implemented: the website reads only the `obk_lp` snapshot
 database (`npm run snapshot:load`, then `npm run snapshot:publish`). Task 5 (below) is implemented on branch `feat/design-polish` (phone layout verified
-with DevTools mobile emulation: document width 390px on all routes). Open owner input: confirm 328 vs 329 Valley Crest.
+with DevTools mobile emulation: document width 390px on all routes).
+**Resolved 2026-09-07:** the address is 329 Valley Crest Drive; the photo file name
+"328 Valley Crest.png" is a typo. Confirmed against the August 2024 property-manager
+owner statement and the cockpit database records (address, aliases, bank review sheet,
+manager notes), all of which say 329. Evidence is held outside this repository.
 
 ## 1. Portfolio tab and Fund III Portfolio tab: consistent photos and addresses
 
