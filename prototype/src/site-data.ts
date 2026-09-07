@@ -63,60 +63,74 @@ export const fundMetrics: {
   key: MetricKey;
   label: string;
   definition: string;
+  group: "Portfolio" | "Cost basis" | "Trailing twelve months";
+  caption?: string;
 }[] = [
   {
     key: "homes",
+    group: "Portfolio",
     label: "Homes",
     definition: "Homes in the active portfolio.",
   },
   {
     key: "occupiedHomes",
+    group: "Portfolio",
     label: "Occupied homes",
     definition:
       "Homes whose recorded status in the portfolio database is Rented.",
   },
   {
     key: "occupancy",
+    group: "Portfolio",
     label: "Occupancy",
     definition: "Occupied homes ÷ homes in the fund × 100%.",
   },
   {
     key: "totalAcquisitionCost",
+    group: "Cost basis",
     label: "Acquisition cost",
+    caption: "including closing costs",
     definition:
       "Purchase price including closing costs, from the merger model; legacy values are used where the cost basis is pending.",
   },
   {
     key: "totalRenovationCost",
+    group: "Cost basis",
     label: "Renovation cost",
     definition:
       "Total renovation cost from the merger model, with the same legacy fallback.",
   },
   {
     key: "totalCapitalization",
+    group: "Cost basis",
     label: "Total capitalization",
     definition:
       "Total acquisition and renovation cost from the merger model, with the same legacy fallback.",
   },
   {
     key: "ttmRentCollected",
+    group: "Trailing twelve months",
     label: "TTM rent collected (EGI)",
     definition:
       "Sum of effective gross income collected over the trailing twelve months.",
   },
   {
     key: "ttmNoi",
+    group: "Trailing twelve months",
     label: "TTM NOI",
     definition: "Sum of net operating income over the trailing twelve months.",
   },
   {
     key: "ttmNoiYield",
+    group: "Trailing twelve months",
     label: "TTM NOI yield",
     definition: "TTM NOI ÷ total capitalization × 100%.",
   },
   {
     key: "ttmCollectionRate",
+    group: "Portfolio",
     label: "TTM collection rate",
+    caption: "can exceed 100% when arrears are collected",
     definition:
       "Rent collected ÷ potential rent × 100%. Arrears collected can bring this above 100%; it is separate from occupied-home occupancy.",
   },

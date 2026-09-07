@@ -86,42 +86,27 @@ export function HomePage() {
         </div>
         <Image.PreviewGroup>
           <div className="home-gallery">
-            {reference.photos.home.map((src, index) => (
-              <figure key={src}>
+            {portfolioProperties.slice(0, 8).map((property) => (
+              <figure key={property.id}>
                 <Image
-                  src={src}
-                  alt={`Obelisk portfolio photograph ${index + 1}`}
+                  src={property.image}
+                  alt={
+                    property.addressProvided
+                      ? `Property at ${property.name}, ${property.location}`
+                      : "Property photograph · address unconfirmed"
+                  }
                   loading="lazy"
                 />
                 <figcaption>
-                  <span>OBELISK RESIDENTIAL</span>
-                  <span>{String(index + 1).padStart(2, "0")}</span>
+                  <span>
+                    {property.name}
+                    <small>{property.location ?? "Address unconfirmed"}</small>
+                  </span>
                 </figcaption>
               </figure>
             ))}
           </div>
         </Image.PreviewGroup>
-      </section>
-      <section className="film-section section-space">
-        <div>
-          <p className="eyebrow">FEATURED VIDEO</p>
-          <h2>
-            A closer look
-            <br />
-            at the platform.
-          </h2>
-          <p>
-            The partner’s template reserves this space for a featured film. The
-            video has not been supplied yet.
-          </p>
-          <Link className="text-link" to="/portfolio">
-            Explore the homes in pictures <ArrowRightOutlined />
-          </Link>
-        </div>
-        <div className="film-placeholder">
-          <span>OBELISK</span>
-          <p>Featured video coming soon</p>
-        </div>
       </section>
       <section className="investor-callout">
         <div>
@@ -178,7 +163,9 @@ export function PortfolioPage() {
                   {property.name}
                   <small>{property.location ?? "Address unconfirmed"}</small>
                 </span>
-                <span>{property.sold ? "Sold" : "Current"}</span>
+                <span className="property-status">
+                  {property.sold ? "Sold" : null}
+                </span>
               </figcaption>
             </figure>
           ))}

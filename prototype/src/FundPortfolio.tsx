@@ -1,10 +1,9 @@
 import { useState } from "react";
-import { Alert, Button, Input, Table, Tooltip, Tag } from "antd";
+import { Alert, Button, Input, Table, Collapse, Tag } from "antd";
 import type { TableColumnsType } from "antd";
 import {
   ArrowRightOutlined,
   HomeOutlined,
-  InfoCircleOutlined,
   SearchOutlined,
 } from "@ant-design/icons";
 import { Link } from "react-router-dom";
@@ -171,8 +170,18 @@ export default function FundPortfolio() {
           <div>
             <p className="eyebrow">SECTION I</p>
             <h2>Portfolio at a glance.</h2>
+            {report.data && (
+              <p className="section-intro">
+                Cost basis as of{" "}
+                {formatReportDate(report.data.summary.costAsOf)}
+                {" · TTM "}
+                {formatReportDate(report.data.summary.ttmPeriodStart)}
+                {" to "}
+                {formatReportDate(report.data.summary.ttmPeriodEnd)}
+              </p>
+            )}
           </div>
-          <Tag>{report.data ? "Cockpit export" : "Report unavailable"}</Tag>
+          <Tag>{report.data ? "Portfolio snapshot" : "Report unavailable"}</Tag>
         </div>
         {report.state !== "ready" && (
           <Alert
@@ -188,67 +197,80 @@ export default function FundPortfolio() {
             description="The photographs below are the property directory; status and financial values appear once the database export is available."
           />
         )}
-        <div className="fund-metrics">
-          {fundMetrics.map((metric) => (
-            <div key={metric.label}>
-              <span>
-                {metric.label}{" "}
-                <Tooltip title={metric.definition}>
-                  <button
-                    className="info-button"
-                    aria-label={`${metric.label} definition`}
-                  >
-                    <InfoCircleOutlined />
-                  </button>
-                </Tooltip>
-              </span>
-              <strong
-                className={
-                  report.data?.summary[metric.key].state === "reported"
-                    ? ""
-                    : "metric-unreported"
-                }
-              >
-                {formatMetric(
-                  metric.key,
-                  report.data?.summary[metric.key] ?? {
-                    state: "not_reported",
-                    value: null,
-                  },
-                )}
-              </strong>
-              <small>
-                {metric.key === "totalAcquisitionCost"
-                  ? "Purchase price including closing costs"
-                  : metric.key.startsWith("ttm")
-                    ? "Trailing twelve months"
-                    : report.data?.summaryAsOf
-                      ? `Snapshot as of ${report.data.summaryAsOf}`
-                      : "Reporting date not supplied"}
-              </small>
+        {["Portfolio", "Cost basis", "Trailing twelve months"].map((group) => (
+          <section className="fund-metric-group" key={group} aria-label={group}>
+            <h3>{group}</h3>
+            <div
+              className={`fund-metrics${group === "Portfolio" ? " fund-metrics-four" : ""}`}
+            >
+              {fundMetrics
+                .filter((metric) => metric.group === group)
+                .map((metric) => (
+                  <div key={metric.key}>
+                    <span>{metric.label}</span>
+                    <strong
+                      className={
+                        report.data?.summary[metric.key].state === "reported"
+                          ? ""
+                          : "metric-unreported"
+                      }
+                    >
+                      {formatMetric(
+                        metric.key,
+                        report.data?.summary[metric.key] ?? {
+                          state: "not_reported",
+                          value: null,
+                        },
+                      )}
+                    </strong>
+                    {metric.caption && <small>{metric.caption}</small>}
+                  </div>
+                ))}
             </div>
-          ))}
-        </div>
-        {report.data && (
-          <p className="source-note">
-            TTM window: {formatReportDate(report.data.summary.ttmPeriodStart)}
-            {" → "}
-            {formatReportDate(report.data.summary.ttmPeriodEnd)}. Cost as of:{" "}
-            {formatReportDate(report.data.summary.costAsOf)}.
-          </p>
-        )}
-        <p className="source-note">
-          Capital recycling rate, stabilized homes, stabilization rate, and
-          refinance pipeline await an approved source.
-        </p>
+          </section>
+        ))}
         <p className="source-note">
           {report.data
-            ? `Exported ${new Date(report.data.exportedAt).toLocaleString()} from the portfolio database. Occupied homes and occupancy use recorded property status at export. Costs use the merger model with legacy fallback where cost basis is pending; TTM totals sum available model values, so homes without TTM data do not contribute operating figures.`
-            : "No financial snapshot is available."}{" "}
-          Zero is a reported value; “Missing” means the source lacks a value;
-          “Not yet reported” means no approved report has supplied it. Photo
-          counts do not determine fund metrics.
+            ? `Source: portfolio snapshot, exported ${report.data.exportedAt.slice(0, 10)}.`
+            : "No financial snapshot is available."}
         </p>
+        <Collapse
+          className="fund-figure-notes"
+          items={[
+            {
+              key: "about",
+              label: "About these figures",
+              children: (
+                <>
+                  <dl className="metric-definitions">
+                    {fundMetrics.map((metric) => (
+                      <div key={metric.key}>
+                        <dt>{metric.label}</dt>
+                        <dd>{metric.definition}</dd>
+                      </div>
+                    ))}
+                  </dl>
+                  <p className="source-note">
+                    Capital recycling rate, stabilized homes, stabilization
+                    rate, and refinance pipeline await an approved source.
+                  </p>
+                  <p className="source-note">
+                    Occupied homes and occupancy use recorded property status at
+                    export. Costs use the merger model with legacy fallback
+                    where cost basis is pending; TTM totals sum available model
+                    values, so homes without TTM data do not contribute
+                    operating figures.
+                  </p>
+                  <p className="source-note">
+                    Zero is a reported value; “Missing” means the source lacks a
+                    value; “Not yet reported” means no approved report has
+                    supplied it. Photo counts do not determine fund metrics.
+                  </p>
+                </>
+              ),
+            },
+          ]}
+        />
       </section>
       <section className="section-space">
         <p className="eyebrow">SECTION II</p>

@@ -14,6 +14,22 @@
 }
 body {
   margin: 0;
+  overflow-wrap: anywhere;
+}
+main *,
+.site-header > *,
+.site-footer > * {
+  min-width: 0;
+}
+.site-header .mobile-menu-toggle,
+.site-header .mobile-navigation {
+  display: none;
+}
+.ant-table-wrapper {
+  max-width: 100%;
+}
+.ant-table-content {
+  overflow-x: auto;
 }
 a {
   color: inherit;
@@ -266,38 +282,9 @@ figure > figcaption span:first-child {
 }
 .home-gallery .ant-image-img,
 .portfolio-gallery .ant-image-img {
-  aspect-ratio: 1.4;
+  aspect-ratio: 4 / 3;
   object-fit: cover;
   width: 100%;
-}
-.film-section {
-  display: grid;
-  grid-template-columns: 1fr 1.3fr;
-  align-items: center;
-  gap: 5rem;
-  border-top: 1px solid var(--rule);
-  padding-top: 55px;
-}
-.film-section > div > p:not(.eyebrow) {
-  color: var(--muted);
-  max-width: 430px;
-}
-.film-placeholder {
-  height: 265px;
-  background: #e8e8e2;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  color: #7f837b;
-}
-.film-placeholder > span {
-  font-size: 2rem;
-  letter-spacing: 0.2em;
-}
-.film-placeholder > p {
-  font-size: 0.875rem;
-  margin: 1rem 0 0;
 }
 .investor-callout {
   margin-top: 75px;
@@ -540,7 +527,7 @@ figure > figcaption span:first-child {
   font-size: 0.875rem;
 }
 .number {
-  font-family: "IBM Plex Mono", monospace;
+  font-variant-numeric: tabular-nums;
   font-size: 0.875rem;
 }
 .pending {
@@ -556,26 +543,46 @@ figure > figcaption span:first-child {
 .promote-heading {
   margin-top: 2.5rem;
 }
-.process-overview {
-  width: 100%;
+.account-grid-empty-returns {
+  grid-template-columns: minmax(0, 1fr);
+  gap: 1.5rem;
 }
-.business-process > .ant-image {
-  width: 100%;
-  background: white;
-  border: 1px solid var(--rule);
+.account-returns-note {
+  margin-bottom: 0;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--rule);
 }
-.process-jumps {
+.process-cards {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1.5rem;
+}
+.process-card {
   display: flex;
-  flex-wrap: wrap;
-  justify-content: space-between;
-  gap: 1rem;
-  padding: 1.25rem 0;
-  margin-top: 0.5rem;
-  border-bottom: 1px solid var(--rule);
+  flex-direction: column;
+  padding: 1.75rem;
+  border: 1px solid var(--rule);
+  background: white;
 }
-.process-jumps a {
-  font-size: 0.875rem;
+.process-card:hover {
+  border-color: #927d5b;
+}
+.process-card .eyebrow {
+  color: #927d5b;
+  margin-bottom: 0.75rem;
+}
+.process-card h3 {
   color: var(--navy);
+  margin-bottom: 0.75rem;
+}
+.process-card p {
+  color: var(--muted);
+  font-size: 0.9375rem;
+}
+.process-tagline {
+  margin-top: auto;
+  color: #8b7554;
+  font-weight: 500;
 }
 .process-step {
   display: grid;
@@ -608,23 +615,30 @@ figure > figcaption span:first-child {
   color: var(--muted);
   font-size: 1rem;
 }
+.fund-metric-group {
+  margin-top: 1.5rem;
+}
+.fund-metric-group h3 {
+  font-size: 1rem;
+  margin-bottom: 0.75rem;
+}
 .fund-metrics {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   background: white;
   border: 1px solid var(--rule);
 }
+.fund-metrics-four {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
 .fund-metrics > div {
   display: flex;
   flex-direction: column;
   gap: 0.8rem;
-  padding: 1.6rem 2rem;
+  padding: 1.6rem 1.25rem;
   border-right: 1px solid var(--rule);
 }
-.fund-metrics > div:nth-child(n + 4) {
-  border-top: 1px solid var(--rule);
-}
-.fund-metrics > div:nth-child(3n) {
+.fund-metrics > div:last-child {
   border-right: 0;
 }
 .fund-metrics > div > span {
@@ -635,21 +649,32 @@ figure > figcaption span:first-child {
 }
 .fund-metrics strong {
   overflow-wrap: anywhere;
-  font:
-    clamp(1.25rem, 2.6vw, 2.5rem) "IBM Plex Mono",
-    monospace;
-  color: #8f9c9b;
+  font-family: inherit;
+  font-size: 2rem;
+  font-variant-numeric: tabular-nums;
+  font-weight: 500;
+  color: var(--navy);
 }
 .fund-metrics small {
   font-size: 0.75rem;
   color: var(--muted);
 }
-.info-button {
-  border: 0;
-  background: transparent;
+.fund-figure-notes {
+  margin-top: 1rem;
+}
+.metric-definitions {
+  margin: 0;
+}
+.metric-definitions > div + div {
+  margin-top: 1rem;
+}
+.metric-definitions dt {
+  font-weight: 500;
+}
+.metric-definitions dd {
+  margin: 0.35rem 0 0;
   color: var(--muted);
-  padding: 0;
-  font-size: 0.875rem;
+  line-height: 1.7;
 }
 .stage-jumps {
   display: flex;
@@ -673,9 +698,8 @@ figure > figcaption span:first-child {
   border: 0;
 }
 .stage-jumps > a > span:first-child {
-  font:
-    1.5rem "IBM Plex Mono",
-    monospace;
+  font-size: 1.5rem;
+  font-variant-numeric: tabular-nums;
   color: #927d5b;
 }
 .stage-jumps .anticon {
@@ -753,7 +777,7 @@ figure > figcaption span:first-child {
 }
 .property-card-photo img {
   width: 100%;
-  aspect-ratio: 1.45;
+  aspect-ratio: 4 / 3;
   object-fit: cover;
   display: block;
   transition: transform 0.25s;
@@ -1035,9 +1059,6 @@ figure > figcaption span:first-child {
   .property-grid {
     grid-template-columns: repeat(2, 1fr);
   }
-  .film-section {
-    gap: 2rem;
-  }
   .login-content {
     padding: 2rem;
   }
@@ -1088,6 +1109,34 @@ figure > figcaption span:first-child {
   }
 }
 @media (max-width: 600px) {
+  .site-header {
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    min-height: 90px;
+    padding-block: 1rem;
+  }
+  .site-header .desktop-navigation {
+    display: none;
+  }
+  .site-header .mobile-menu-toggle {
+    display: inline-flex;
+  }
+  .site-header .mobile-navigation:not([hidden]) {
+    display: flex;
+    flex: 0 0 100%;
+    flex-direction: column;
+    border-top: 1px solid var(--rule);
+  }
+  .mobile-navigation a {
+    padding: 0.8rem;
+    color: var(--navy);
+  }
+  .mobile-navigation a[aria-current="page"] {
+    background: #e8ebe6;
+    font-weight: 500;
+  }
   main {
     width: 90%;
     padding-bottom: 45px;
@@ -1143,14 +1192,6 @@ figure > figcaption span:first-child {
   .property-grid {
     grid-template-columns: 1fr;
     gap: 1.5rem;
-  }
-  .film-section {
-    grid-template-columns: 1fr;
-    gap: 2rem;
-    padding-top: 35px;
-  }
-  .film-placeholder {
-    height: 230px;
   }
   .investor-callout {
     flex-direction: column;
@@ -1214,38 +1255,33 @@ figure > figcaption span:first-child {
   .process-copy h3 {
     font-size: 1.5rem;
   }
-  .process-jumps {
-    justify-content: flex-start;
-  }
-  .process-jumps a {
-    flex-basis: 45%;
+  .process-cards {
+    grid-template-columns: minmax(0, 1fr);
   }
   .fund-metrics {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: minmax(0, 1fr);
   }
   .fund-metrics > div {
     padding: 1.2rem;
   }
-  .fund-metrics > div:nth-child(3n) {
-    border-right: 1px solid var(--rule);
-  }
-  .fund-metrics > div:nth-child(2n) {
+  .fund-metrics > div:nth-child(n) {
     border-right: 0;
   }
-  .fund-metrics > div:nth-child(n + 3) {
+  .fund-metrics > div + div {
     border-top: 1px solid var(--rule);
   }
   .stage-jumps {
-    flex-wrap: wrap;
+    flex-direction: column;
   }
   .stage-jumps > a {
-    flex-basis: 33%;
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+    border-right: 0;
+    border-bottom: 1px solid var(--rule);
   }
   .stage-jumps > a:first-child {
     padding-left: 1rem;
-  }
-  .stage-jumps > a:nth-child(3) {
-    border-right: 0;
   }
   .fund-stage {
     padding-block: 2.2rem;
@@ -1266,7 +1302,7 @@ figure > figcaption span:first-child {
   .property-summary .ant-image-img {
     min-height: 0;
     height: auto;
-    aspect-ratio: 1.4;
+    aspect-ratio: 4 / 3;
   }
   .property-summary > div:last-child {
     padding: 1.5rem;
@@ -1302,18 +1338,22 @@ figure > figcaption span:first-child {
   }
 }
 
+.home-gallery figcaption,
 .portfolio-gallery figcaption {
   font-size: 0.875rem;
 }
+.home-gallery figcaption span:first-child,
 .portfolio-gallery figcaption span:first-child {
   letter-spacing: normal;
 }
+.home-gallery figcaption small,
 .portfolio-gallery figcaption small {
   display: block;
   margin-top: 0.35rem;
 }
 
 .fund-metrics strong.metric-unreported {
+  color: var(--muted);
   font-size: 1.1rem;
   line-height: 1.5;
 }
@@ -1328,4 +1368,9 @@ figure > figcaption span:first-child {
   border: 1px solid var(--rule);
   color: var(--muted);
   font-size: 1.1rem;
+}
+
+.property-status {
+  flex: 0 0 2.5rem;
+  min-height: 1.5em;
 }

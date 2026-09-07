@@ -8,8 +8,8 @@ export of the cockpit database; see `prototype/README.md`. All 38 photographs ar
 matched to database records. Funds I and II merged into Fund III, so the export covers
 every current home. Task 3 (below) is implemented: the export reads the cockpit's
 merger-model cost basis and emits a sourced fund-level snapshot (schema v2). Task 4 (below) is implemented: the website reads only the `obk_lp` snapshot
-database (`npm run snapshot:load`, then `npm run snapshot:publish`). **Task 5 (below) is open** on branch `feat/design-polish`: visual fixes from the
-2026-09-06 design review. Open owner input: confirm 328 vs 329 Valley Crest.
+database (`npm run snapshot:load`, then `npm run snapshot:publish`). Task 5 (below) is implemented on branch `feat/design-polish` (phone layout verified
+with DevTools mobile emulation: document width 390px on all routes). Open owner input: confirm 328 vs 329 Valley Crest.
 
 ## 1. Portfolio tab and Fund III Portfolio tab: consistent photos and addresses
 

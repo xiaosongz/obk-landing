@@ -291,17 +291,29 @@ test("rendered Fund III page displays supplied values without assigning source p
     "Missing",
     "cost basis pending",
     "Synthetic fallback property",
-    "Purchase price including closing costs",
-    "TTM window:",
+    "including closing costs",
+    " · TTM ",
     "2025-07-01",
-    "Cost as of:",
+    "Cost basis as of",
     "Photo unconfirmed",
     "2026-06-30",
   ])
     assert(html.includes(value), value);
-  const grid = html
-    .split('class="fund-metrics"')[1]
-    .split('<p class="source-note">')[0];
+  const groups = [
+    ...html.matchAll(
+      /<section class="fund-metric-group"[^>]*>(.*?)<\/section>/g,
+    ),
+  ].map((match) => match[1]);
+  assert.deepEqual(
+    groups.map((group) => [...group.matchAll(/<strong/g)].length),
+    [4, 3, 3],
+  );
+  const grid = groups.join("");
+  assert(!grid.includes("metric-unreported"));
+  assert(!grid.includes("Snapshot as of"));
+  assert(!grid.includes("info-button"));
+  assert(html.includes("About these figures"));
+  assert(html.includes('aria-expanded="false"'));
   assert(!grid.includes("Not yet reported"));
   for (const unsupported of [
     "Capital recycling rate",
@@ -310,10 +322,65 @@ test("rendered Fund III page displays supplied values without assigning source p
     "refinance pipeline",
   ]) {
     assert(!grid.includes(unsupported));
-    assert(html.includes(unsupported));
+    assert(
+      !html.includes(unsupported),
+      "unsourced measures stay in the closed panel",
+    );
   }
   assert(!html.includes("4401 Avenue I"));
   assert(!html.includes("property-detail-01.png"));
+});
+
+test("investor account hides empty rows, preserves zero, and restores provided return panels", async () => {
+  const result = await build({
+    stdin: {
+      contents: `
+        const React = require('react');
+        const { renderToStaticMarkup } = require('react-dom/server');
+        const { MemoryRouter } = require('react-router-dom');
+        const InvestorHome = require('./src/InvestorHome.tsx').default;
+        const { investorExample } = require('./src/site-data.ts');
+        const render = () => renderToStaticMarkup(React.createElement(MemoryRouter, null, React.createElement(InvestorHome)));
+        const empty = render();
+        investorExample.preferredTotal = 0;
+        investorExample.promoteDistributed = 123;
+        investorExample.subscription = null;
+        module.exports = { empty, partial: render() };
+      `,
+      resolveDir: process.cwd(),
+    },
+    bundle: true,
+    platform: "node",
+    format: "cjs",
+    packages: "external",
+    write: false,
+  });
+  const module = { exports: null };
+  new Function("require", "module", result.outputFiles[0].text)(
+    createRequire(import.meta.url),
+    module,
+  );
+  const { empty, partial } = module.exports;
+  assert(
+    empty.includes("Preferred return and promote figures are not yet provided"),
+  );
+  assert(!empty.includes("Not provided"));
+  assert(empty.includes("Callable capital") && empty.includes("$0"));
+  assert(!empty.includes('src="/images/business-process.png"'));
+  assert.equal([...empty.matchAll(/class="process-card"/g)].length, 6);
+  assert(partial.includes("Total preferred return") && partial.includes("$0"));
+  assert(partial.includes("Distributed promote") && partial.includes("$123"));
+  for (const hidden of [
+    "Total subscription",
+    "Distributed preferred return",
+    "Accrued preferred return",
+    "Total promote",
+    "Remaining promote",
+    "Not provided",
+    "Preferred return and promote figures are not yet provided",
+  ]) {
+    assert(!partial.includes(hidden), hidden);
+  }
 });
 
 test("CLI passes read-only SQL, writes atomically outside the repo, and preserves reports on rejected roles", async () => {

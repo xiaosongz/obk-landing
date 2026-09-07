@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Button, Menu } from "antd";
 import { ArrowRightOutlined } from "@ant-design/icons";
 import {
@@ -17,12 +17,14 @@ import { navigation } from "./site-data";
 import { reference } from "./reference-content";
 
 export default function App() {
+  const [menuOpen, setMenuOpen] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
   const active = location.pathname.startsWith("/property-performance")
     ? "/property-performance"
     : location.pathname;
   useEffect(() => {
+    setMenuOpen(false);
     document.title = `${navigation.find((page) => page.key === active)?.label ?? "Obelisk"} · Obelisk Fund Management`;
     if (location.hash) {
       document
@@ -56,13 +58,46 @@ export default function App() {
         <Link className="brand" to="/" aria-label="Obelisk homepage">
           OBELISK<small>FUND MANAGEMENT</small>
         </Link>
-        <nav aria-label="Main navigation">
+        <Button
+          className="mobile-menu-toggle"
+          aria-expanded={menuOpen}
+          aria-controls="mobile-navigation"
+          onClick={() => setMenuOpen(!menuOpen)}
+        >
+          {menuOpen ? "Close menu" : "Menu"}
+        </Button>
+        <nav className="desktop-navigation" aria-label="Main navigation">
           <Menu
             mode="horizontal"
             selectedKeys={[active]}
             items={navigation}
             onClick={({ key }) => navigate(key)}
           />
+        </nav>
+        <nav
+          id="mobile-navigation"
+          className="mobile-navigation"
+          aria-label="Main navigation"
+          hidden={!menuOpen}
+          onKeyDown={(event) => {
+            if (event.key === "Escape") {
+              setMenuOpen(false);
+              document
+                .querySelector<HTMLButtonElement>(".mobile-menu-toggle")
+                ?.focus();
+            }
+          }}
+        >
+          {navigation.map((page) => (
+            <Link
+              key={page.key}
+              to={page.key}
+              aria-current={active === page.key ? "page" : undefined}
+              onClick={() => setMenuOpen(false)}
+            >
+              {page.label}
+            </Link>
+          ))}
         </nav>
       </header>
       <main id="main" tabIndex={-1}>

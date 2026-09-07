@@ -9,16 +9,51 @@ import { Link } from "react-router-dom";
 import { reference } from "./reference-content";
 import { currency, investorExample } from "./site-data";
 
-const value = (amount: number | null) =>
-  amount === null ? (
-    <span className="pending">Not provided</span>
-  ) : (
-    <span className="number">{currency(amount)}</span>
-  );
+const amountRows = (
+  rows: { key: string; label: string; amount: number | null }[],
+) =>
+  rows
+    .filter((row) => row.amount !== null)
+    .map((row) => ({
+      key: row.key,
+      label: row.label,
+      children: <span className="number">{currency(row.amount!)}</span>,
+    }));
 
 export default function InvestorHome() {
   const [legalOpen, setLegalOpen] = useState(false);
   const account = investorExample;
+  const preferredRows = amountRows([
+    {
+      key: "total",
+      label: "Total preferred return",
+      amount: account.preferredTotal,
+    },
+    {
+      key: "distributed",
+      label: "Distributed preferred return",
+      amount: account.preferredDistributed,
+    },
+    {
+      key: "accrued",
+      label: "Accrued preferred return",
+      amount: account.preferredAccrued,
+    },
+  ]);
+  const promoteRows = amountRows([
+    { key: "total", label: "Total promote", amount: account.promoteTotal },
+    {
+      key: "distributed",
+      label: "Distributed promote",
+      amount: account.promoteDistributed,
+    },
+    {
+      key: "remaining",
+      label: "Remaining promote",
+      amount: account.promoteRemaining,
+    },
+  ]);
+  const returnsEmpty = preferredRows.length === 0 && promoteRows.length === 0;
   return (
     <>
       <div className="page-title investor-welcome">
@@ -75,7 +110,9 @@ export default function InvestorHome() {
             </div>
           ))}
         </div>
-        <div className="account-grid">
+        <div
+          className={`account-grid${returnsEmpty ? " account-grid-empty-returns" : ""}`}
+        >
           <section>
             <h3>Investor & commitment</h3>
             <Descriptions
@@ -101,78 +138,62 @@ export default function InvestorHome() {
                     </Button>
                   ),
                 },
-                {
-                  key: "subscription",
-                  label: "Total subscription",
-                  children: value(account.subscription),
-                },
-                {
-                  key: "contribution",
-                  label: "Total contribution",
-                  children: value(account.contribution),
-                },
-                {
-                  key: "callable",
-                  label: "Callable capital",
-                  children: value(account.callable),
-                },
-                {
-                  key: "returned",
-                  label: "Returned initial capital",
-                  children: value(account.returned),
-                },
-                {
-                  key: "remaining",
-                  label: "Remaining capital",
-                  children: value(account.remaining),
-                },
+                ...amountRows([
+                  {
+                    key: "subscription",
+                    label: "Total subscription",
+                    amount: account.subscription,
+                  },
+                  {
+                    key: "contribution",
+                    label: "Total contribution",
+                    amount: account.contribution,
+                  },
+                  {
+                    key: "callable",
+                    label: "Callable capital",
+                    amount: account.callable,
+                  },
+                  {
+                    key: "returned",
+                    label: "Returned initial capital",
+                    amount: account.returned,
+                  },
+                  {
+                    key: "remaining",
+                    label: "Remaining capital",
+                    amount: account.remaining,
+                  },
+                ]),
               ]}
             />
           </section>
-          <section>
-            <h3>Preferred return</h3>
-            <Descriptions
-              column={1}
-              items={[
-                {
-                  key: "total",
-                  label: "Total preferred return",
-                  children: value(account.preferredTotal),
-                },
-                {
-                  key: "distributed",
-                  label: "Distributed preferred return",
-                  children: value(account.preferredDistributed),
-                },
-                {
-                  key: "accrued",
-                  label: "Accrued preferred return",
-                  children: value(account.preferredAccrued),
-                },
-              ]}
-            />
-            <h3 className="promote-heading">Promote</h3>
-            <Descriptions
-              column={1}
-              items={[
-                {
-                  key: "total",
-                  label: "Total promote",
-                  children: value(account.promoteTotal),
-                },
-                {
-                  key: "distributed",
-                  label: "Distributed promote",
-                  children: value(account.promoteDistributed),
-                },
-                {
-                  key: "remaining",
-                  label: "Remaining promote",
-                  children: value(account.promoteRemaining),
-                },
-              ]}
-            />
-          </section>
+          {returnsEmpty ? (
+            <p className="pending account-returns-note">
+              Preferred return and promote figures are not yet provided
+            </p>
+          ) : (
+            <section>
+              {preferredRows.length > 0 && (
+                <>
+                  <h3>Preferred return</h3>
+                  <Descriptions column={1} items={preferredRows} />
+                </>
+              )}
+              {promoteRows.length > 0 && (
+                <>
+                  <h3
+                    className={
+                      preferredRows.length ? "promote-heading" : undefined
+                    }
+                  >
+                    Promote
+                  </h3>
+                  <Descriptions column={1} items={promoteRows} />
+                </>
+              )}
+            </section>
+          )}
         </div>
         <p className="source-note">
           The capital account uses fictional figures for review. Unprovided
@@ -190,15 +211,17 @@ export default function InvestorHome() {
             </p>
           </div>
         </div>
-        <Image
-          className="process-overview"
-          src={reference.processOverview}
-          alt="Obelisk's six-step business process: Acquisition, Renovation, Leasing, Stabilization, Refinance, and Scaling"
-        />
-        <div className="process-jumps">
+        <div className="process-cards">
           {reference.processSteps.map((step) => (
-            <a key={step.id} href={`#/investor-home#process-${step.id}`}>
-              {step.id}. {step.name}
+            <a
+              className="process-card"
+              key={step.id}
+              href={`#/investor-home#process-${step.id}`}
+            >
+              <span className="eyebrow">{step.id.padStart(2, "0")}</span>
+              <h3>{step.name}</h3>
+              <p>{step.overview}</p>
+              <span className="process-tagline">{step.tagline}</span>
             </a>
           ))}
         </div>

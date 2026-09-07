@@ -14,10 +14,14 @@ export const reference = {
     "property-detail": ["/images/property-detail-01.png"],
   },
   processOverview: "/images/business-process.png",
+  // Overview descriptions and taglines transcribed verbatim from business-process.png.
   processSteps: [
     {
       id: "1",
       name: "Acquisition",
+      overview:
+        "Identify and acquire undervalued, affordable single-family homes in strong rental markets.",
+      tagline: "Buy Right.",
       title:
         "Step 1. Acquisition of Undervalued Affordable Single Family Homes",
       paragraphs: [
@@ -32,6 +36,9 @@ export const reference = {
     {
       id: "2",
       name: "Renovation",
+      overview:
+        "Execute cost-effective renovations to meet Section 8 standards with durability and tenant appeal.",
+      tagline: "Improve Smart.",
       title: "Step 2. Renovation: Compliance-Led, Value-Engineered",
       paragraphs: [
         "Obelisk takes a fundamentally different approach to renovating affordable rental housing. Our objective is not to maximize renovation spend or create luxury homes. It is to deliver safe, durable, attractive housing that performs above Section 8 requirements—without over-improving the asset. We begin with the applicable Housing Choice Voucher inspection and habitability requirements and use them as the baseline for every renovation. From there, we selectively invest in improvements that meaningfully increase durability, tenantability, rentability, and long-term operating performance.",
@@ -50,6 +57,9 @@ export const reference = {
     {
       id: "3",
       name: "Leasing",
+      overview:
+        "Rigorous tenant screening and expert handling of government procedures to secure qualified tenants quickly.",
+      tagline: "Lease Well.",
       title: "Step 3. Leasing: Disciplined Screening, Expert Execution",
       paragraphs: [
         "Leasing affordable housing requires more than filling vacancies. Obelisk combines rigorous tenant screening with deep proficiency in government housing programs to convert renovated properties into stable, cash-flowing assets. ",
@@ -66,6 +76,9 @@ export const reference = {
     {
       id: "4",
       name: "Stabilization",
+      overview:
+        "Deliver responsive maintenance, manage expectations, and drive properties to stable, predictable NOI.",
+      tagline: "Stabilize Value.",
       title: "Step 4. Stabilize: From Occupancy to Durable Cash Flow",
       paragraphs: [
         "Leasing a home is only the beginning of the operating cycle. Obelisk treats the post-leasing period as a critical stabilization phase—where we address the realities of living in the home, establish a productive relationship with the tenant, and bring the property to a predictable and sustainable NOI level. Our approach is proactive rather than reactive.",
@@ -80,6 +93,9 @@ export const reference = {
     {
       id: "5",
       name: "Refinance",
+      overview:
+        "Refinance stabilized assets to recycle capital and compound portfolio growth at investors’ discretion.",
+      tagline: "Recycle Capital.",
       title: "Step 5. Refinance: Recycle Capital, Compound Scale",
       paragraphs: [
         "Once a property has been renovated, leased, and stabilized, Obelisk evaluates refinancing opportunities based on the property's stabilized cash flow, market value, and prudent leverage capacity. Refinancing serves an important purpose in our investment model: capital recycling.",
@@ -94,6 +110,9 @@ export const reference = {
     {
       id: "6",
       name: "Scaling",
+      overview:
+        "Reinvest capital and repeat the cycle to build a concentrated, high-quality portfolio.",
+      tagline: "Scale Impact.",
       title: "Step 6. Scale: Build Density, Replicate the Model",
       paragraphs: [
         "Once Obelisk has established a proven operating model in Birmingham, we seek to scale the platform through greater portfolio density and selective expansion into additional markets.",

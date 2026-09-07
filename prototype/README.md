@@ -19,10 +19,10 @@ Open [http://127.0.0.1:8766/](http://127.0.0.1:8766/). The server binds only to 
 
 | Page | Route | Included content |
 |---|---|---|
-| Home | `#/` | Affordable-housing platform introduction, Acquire/Improve/Operate strategy, eight source photographs, portfolio/investor links, featured-video slot, original disclosure |
+| Home | `#/` | Affordable-housing platform introduction, Acquire/Improve/Operate strategy, eight canonically mapped property photographs, portfolio/investor links, original disclosure |
 | Portfolio | `#/portfolio` | Original portfolio introduction and all 37 showcase photographs, with a working image viewer |
 | Investor Login | `#/investor-login` | Investor entry page and an explicitly labeled demo entry; no credential collection |
-| Investor Home | `#/investor-home` | Investor-relations contact, both fund links, all subscription/capital/preferred-return/promote field groups, legal-document placeholder, original process overview and six illustrated process sections |
+| Investor Home | `#/investor-home` | Investor-relations contact, both fund links, provided subscription/capital/preferred-return/promote rows, legal-document placeholder, six native process overview cards and six illustrated process sections |
 | Fund III Portfolio | `#/fund-iii-portfolio` | Sourced fund snapshot and TTM window, Buy/Rehab/Rent/Refinance/Repeat stages, searchable acquisition directory, stabilized and stabilizing reporting layouts, manager-note areas |
 | Property Performance | `#/property-performance` | Source current/sold property gallery and routes to property details |
 | Property detail | `#/property-performance/4401-avenue-i` | Source property photo, performance-at-a-glance fields, asset overview, lease, T-12 and cumulative financial layouts, calculation rules, original map |
@@ -34,7 +34,7 @@ The full business-process copy is retained in expandable reading sections. Illus
 - Curated business copy and process illustrations are in `src/reference-content.ts` and `public/images/`. Property photographs are in `public/images/properties/`, one per home, converted to 1600px JPEG from the owner's address-named photo library (shared drive `OBK Portal/Property Photos`). `src/property-mapping.json` links each photograph to its database record by address and property ID.
 - Funds I and II merged into Fund III; every current home is Fund III. The database's per-property fund column is the historical acquisition vehicle and is not shown to investors. One photo file (named 328 Valley Crest) was matched by street name to the database address 329 Valley Crest Drive; the owner should confirm which number is correct.
 - The investor account uses a fictional identity and illustrative capital amounts. Preferred-return/promote values and property financial cells remain unfilled. No personal investor record, tenant record, legal agreement, or screenshot financial table is imported.
-- The source login page was blank. The featured-video slot and subscription-agreement link had no supplied content. These omissions are labeled rather than filled with invented material.
+- The source login page was blank. The unsupplied featured-video slot is removed. The subscription-agreement link remains explicitly labeled as unsupplied.
 - Production must use authenticated server-side investor/fund authorization and the website’s own snapshot database, populated from approved cockpit financial read models by a GP-side job. Source narrative definitions need reconciliation with those models before displaying calculated results.
 
 ## Maintenance
@@ -44,6 +44,64 @@ The full business-process copy is retained in expandable reading sections. Illus
 The old generic dashboard and unrelated distribution chart have been removed. The root repository’s original static page and Pages workflow remain separate; the workflow does not build this prototype. The prototype is maintained on `feat/investor-portal-prototype`; the root deployment remains separate.
 
 Validation: TypeScript and production build pass. Browser checks covered all six navigation destinations, the 37-image viewer, expanded process copy, fund-directory search, property-report sections, and the loaded map. The final homepage reload reported no new browser errors. All 46 deduplicated image files and source-content coverage checks passed. Mobile styles are implemented but have not been independently browser-tested.
+
+## Design polish review (2026-09-06)
+
+Task 5 sections A–D are implemented. The process overview descriptions and taglines
+are transcribed verbatim from `public/images/business-process.png`; the raster and
+all original detailed process text remain on disk. Home gallery photos and captions
+now come together from the first eight entries in `portfolioProperties`.
+
+Build and worker typecheck pass; all 12 fund-data tests pass, including the grouped
+fund summary and empty/partially provided investor-account rendering. The data tests
+use synthetic fixtures and a stubbed `psql`; no database connection is needed.
+
+Visual acceptance remains **pending**: the requested Chrome headless launch aborted
+with exit 134 / SIGABRT in macOS `_RegisterApplication` before loading a page. The
+browser connector also reported Chrome unavailable. Preview served HTTP 200, but
+no screenshots or measured document widths were obtained. Run the following from
+`prototype/` once Chrome can launch (no database or environment-file loading):
+
+```sh
+npm run preview
+# In a second terminal:
+mkdir -p .wrangler/tmp-shots
+for width in 1440 390; do
+  for page in home portfolio fund-iii-portfolio investor-home; do
+    route="$page"
+    if [ "$page" = home ]; then route=""; fi
+    "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" \
+      --headless=new --disable-gpu --hide-scrollbars \
+      --virtual-time-budget=6000 --window-size="$width,2400" \
+      --screenshot="$PWD/.wrangler/tmp-shots/$page-$width.png" \
+      "http://127.0.0.1:8766/#/$route"
+  done
+ done
+```
+
+Manual acceptance checklist for the PR (screenshots stay gitignored):
+
+- [ ] Capture all four routes at 1440×2400 and 390×2400, then inspect sections below
+  the screenshot fold too.
+- [ ] At 390px, confirm `window.innerWidth` and
+  `document.documentElement.scrollWidth` are both 390 on every route. Repeat with
+  the menu open and “About these figures” expanded; record actual widths.
+- [ ] Nav toggles and closes after navigation; keyboard links work; Escape from the
+  menu returns focus to its toggle. Intro text and footnotes wrap without clipping.
+- [ ] Phone metric groups are one column and BRRRR stages stack. Acquisition and
+  performance tables scroll inside their containers without widening the page.
+- [ ] Desktop metric rows contain 4/3/3 tiles; reported values are navy, pending
+  states grey. Dates appear once and definitions open from the closed panel.
+- [ ] Home/Portfolio captions match their shared photo records; cards use 4:3 crops;
+  current status labels and the featured-video placeholder are absent.
+- [ ] Investor Home shows six native overview cards with the source wording, no
+  overview raster, and one sentence for the empty preferred-return/promote groups.
+
+The sandbox makes `.git` read-only, so changes are left uncommitted. Owner handoff:
+complete the visual checklist, commit sections A/B/C/D separately with messages
+ending in `Claude-Session: https://claude.ai/code/session_01VD7qUYJqtrzS7ANe1L7bUT`,
+and push `feat/design-polish`. The existing 328 vs 329 Valley Crest confirmation
+remains with the owner; the mapping is unchanged.
 
 ## Canonical property/photo mapping
 
