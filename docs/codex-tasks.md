@@ -10,6 +10,7 @@ every current home. Task 3 (below) is implemented: the export reads the cockpit'
 merger-model cost basis and emits a sourced fund-level snapshot (schema v2). Task 4 (below) is implemented: the website reads only the `obk_lp` snapshot
 database (`npm run snapshot:load`, then `npm run snapshot:publish`). Task 5 (below) is implemented on branch `feat/design-polish` (phone layout verified
 with DevTools mobile emulation: document width 390px on all routes).
+**Task 6 (below) is open:** property report pages from the snapshot database.
 **Resolved 2026-09-07:** the address is 329 Valley Crest Drive; the photo file name
 "328 Valley Crest.png" is a typo. Confirmed against the August 2024 property-manager
 owner statement and the cockpit database records (address, aliases, bank review sheet,
@@ -287,6 +288,102 @@ least a manual checklist in the PR message. Verify with Chrome headless at
 - `npm run build`, `npm run test:fund-data`, `npm run check:worker` must pass.
 - Render `/`, `/portfolio`, `/fund-iii-portfolio`, `/investor-home` at 1440 and 390
   wide with Chrome headless and describe what changed in each.
+
+## 6. Property report pages from the snapshot database
+
+Owner request 2026-09-07: every property report page (`/property-performance/:id`,
+`src/PropertyPages.tsx`, `PropertyDetail`) is empty except the template home. The
+cockpit database has the data, so the snapshot must carry it and the page must render
+it. Same rules as tasks 4 and 5: the website reads only the `obk_lp` snapshot database;
+no tenant or investor identities; unknown values stay "Not provided", never zero.
+
+### Facts verified against the cockpit database (2026-09-07, production `obk`)
+
+- `public.properties` (37 active homes): `bedrooms`, `bathrooms`, `year_built`, `sqft`
+  populated for 32; `zip_code` for 37; `lot_sqft` and `occupancy_30day` empty. `status`
+  values: Rented (34), Leasing (1), Pending Sec 8 (1), NULL (1).
+- Cost basis: `obk_merger.property_capitalization` as in task 3 (all 37).
+- `obk_merger.property_period_metrics`, rows per property for `period_label` in
+  (`trailing_12_mo`, `since_acquired`, `ytd`, `this_month`). Production columns are:
+  `period_start`, `period_end`, `rent_egi_collected`, `potential_rent`,
+  `collection_rate`, `opex`, `property_tax`, `insurance`, `noi`, `noi_ratio`,
+  `noi_yield`, `annualized_yield`, `capex`, `noi_after_capex`. (`fcf`, `rent_collected`,
+  `capital_reserves` exist only in the newer test schema; do not read them.)
+  `annualized_yield` is populated only for `since_acquired`. `potential_rent` and
+  `collection_rate` are NULL for a few homes.
+- `obk_merger.property_overview`: `hold_period_years`, `fund_series` (historical).
+- `public.leases`: 58 rows for 32 homes. Latest lease per home (`ORDER BY lease_start
+  DESC NULLS LAST, lease_number DESC`) has `monthly_rent`, `lease_start`, `lease_end`,
+  `is_month_to_month`; `lease_type`, `security_deposit`, `sec8_rent`, `tenant_rent`,
+  `program_type` are NULL for every row in production. Only 9 latest leases have
+  `lease_end` on or after today; the rest are expired or rolled to month-to-month.
+  **Never read** `tenant_name`, `tenant_phone`, `pha_id`, `hap_number`, `landlord_id`,
+  `housing_authority`, `source_sheet_row`.
+- The financial table on the page (`financialLines` in `src/site-data.ts`) wants EGI,
+  property tax, insurance, variable opex, NOI, CapEx, FCF. Map: EGI = `rent_egi_collected`,
+  tax = `property_tax`, insurance = `insurance`, opex = `opex`, NOI = `noi`,
+  CapEx = `capex`, FCF = `noi_after_capex` (NOI less CapEx; label it that way).
+
+### Required outcome
+
+1. Snapshot schema v3. Extend `scripts/fund-iii.sql` with two arrays:
+   - `propertyDetails` (one per active home): `propertyId`, `bedrooms`, `bathrooms`,
+     `yearBuilt`, `sqft`, `zip`, `lat`, `lon`, `holdPeriodYears`, `currentMonthlyRent` (latest lease
+     `monthly_rent`), `leaseStart`, `leaseEnd`, `monthToMonth` (boolean or null),
+     `leaseCurrent` (true when `lease_end >= as-of date` or month-to-month).
+   - `propertyPeriods` (two per home, `period` in `trailing_12_mo`, `since_acquired`):
+     `propertyId`, `period`, `periodStart`, `periodEnd`, `egi`, `propertyTax`,
+     `insurance`, `opex`, `noi`, `capex`, `noiAfterCapex`, `potentialRent`,
+     `collectionRate`, `noiYield`, `annualizedYield`.
+   Each measure keeps the null-means-missing convention. Add matching tables to
+   `scripts/lp-snapshot-schema.sql` (`fund_snapshot_property_details`,
+   `fund_snapshot_property_periods`, PK on snapshot_id + property_id [+ period]),
+   extend `load_fund_snapshot` (exact-key checks as before) and the publisher's
+   `json_build_object`. Keep the DDL idempotent so the owner can re-apply it to the
+   existing `obk_lp` database (`CREATE TABLE IF NOT EXISTS`, `CREATE OR REPLACE FUNCTION`).
+2. `src/fund-data.ts`: `schemaVersion` 3, types and `parseFundSnapshot` for the new
+   arrays (fail closed on unknown keys; every property in `properties` must have one
+   details row and at most one row per period). Update `tests/fund-data.test.mjs`
+   fixtures and the schema-vs-parser field test.
+3. `src/PropertyPages.tsx`: `PropertyDetail` looks up the snapshot rows by
+   `propertyId` (via `useFundSnapshot`) and fills:
+   - At a glance: Status (from snapshot `status`), Current occupancy (Rented → "Occupied",
+     Leasing / Pending Sec 8 → that text, null → "Not provided"), Current monthly rent,
+     Total cost basis, and replace "Cumulative cash-on-cash return" with
+     "Annualized NOI yield since acquisition" (`annualizedYield`, %). Report date line
+     shows the snapshot cost as-of and TTM window.
+   - Asset overview: Address, Floor plan ("3 bd · 2 ba" when both known), Vintage
+     (`yearBuilt`), Square footage, Acquisition date, Total acquisition, Total renovation,
+     Total cost, Owner ("Obelisk Fund III LLC" for every current home, per the merger).
+     Drop the "Property type" row (no source column).
+   - Lease: Monthly rent, Lease start, Lease end, and a "Lease term" row reading
+     "Month-to-month" / "Current through {end}" / "Expired {end}; renewal not yet
+     recorded". Remove the Tenant(s), Lease type, Security deposit, Section 8 amount and
+     Tenant portion rows (no LP-appropriate source). Keep the source note saying resident
+     information is not shown.
+   - Financial performance: `FinancialTable` renders the two period rows from the
+     snapshot with currency formatting; add a small "Potential rent / collection rate /
+     NOI yield" line under each table when present. Replace the "Financial history
+     pending" placeholder with one sentence stating monthly history is not part of the
+     snapshot. Keep the calculation-rules panel but reword the first paragraph to say the
+     periods come from the cockpit's merger model (TTM window and since-acquired dates
+     shown).
+   - Location & map (owner: "it should be easy to create based on the property
+     address"): keep a real map for every home. Add `lat` and `lon` to
+     `propertyDetails` from `public.properties.lat` / `lon` (populated for 32 of 37;
+     null otherwise). Render an OpenStreetMap embed
+     (`https://www.openstreetmap.org/export/embed.html?bbox=<lon-0.004>,<lat-0.003>,<lon+0.004>,<lat+0.003>&layer=mapnik&marker=<lat>,<lon>`)
+     with `loading="lazy"` and `referrerPolicy="no-referrer"`, a caption with the full
+     address, and a plain link to `https://www.openstreetmap.org/?mlat=<lat>&mlon=<lon>#map=17/<lat>/<lon>`.
+     Do not use Google Maps or any Google service (mainland-China reachability; see
+     `README.md`). When coordinates are null show the address and "Map pending
+     geocoding". Drop `isSourceDetail` and its 4401 Avenue I special cases.
+   - The property directory cards (`PropertyCards`) show status and current rent when
+     the snapshot is loaded.
+4. `README.md`: document the new columns (both schemas) and the excluded lease
+   identity columns by name.
+5. Do not connect to any database; do not read `.env*`. `npm run build`,
+   `npm run test:fund-data`, `npm run check:worker` must pass.
 
 ## Process
 
