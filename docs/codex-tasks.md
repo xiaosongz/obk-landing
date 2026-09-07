@@ -8,7 +8,8 @@ export of the cockpit database; see `prototype/README.md`. All 38 photographs ar
 matched to database records. Funds I and II merged into Fund III, so the export covers
 every current home. Task 3 (below) is implemented: the export reads the cockpit's
 merger-model cost basis and emits a sourced fund-level snapshot (schema v2). Task 4 (below) is implemented: the website reads only the `obk_lp` snapshot
-database (`npm run snapshot:load`, then `npm run snapshot:publish`). Open owner input: confirm 328 vs 329 Valley Crest.
+database (`npm run snapshot:load`, then `npm run snapshot:publish`). **Task 5 (below) is open** on branch `feat/design-polish`: visual fixes from the
+2026-09-06 design review. Open owner input: confirm 328 vs 329 Valley Crest.
 
 ## 1. Portfolio tab and Fund III Portfolio tab: consistent photos and addresses
 
@@ -207,6 +208,81 @@ cockpit read-only role for the website.
    that the website never connects to the cockpit database.
 5. Do not connect to any database. `npm run build`, `npm run test:fund-data` and
    `npm run check:worker` must pass.
+
+## 5. Design polish from the 2026-09-06 review
+
+Findings from rendering the built site at 1440px and 390px wide. Keep the existing
+typography, palette (navy ink, tan accent, off-white ground) and page structure; these
+are corrections, not a redesign. No content invention: addresses come only from
+`src/property-mapping.json`; do not add copy that states facts about the business.
+
+### A. Phone layout overflows (bug, do first)
+
+At 390px the header nav, the page intro sentence, the fund metric grid, the BRRRR stage
+strip and the footnotes run past the right edge and the body scrolls sideways. Required:
+below 600px the nav collapses to a compact menu (Ant Design `Drawer` or a simple
+toggle), the metric grid is one column, the stage strip stacks, long text wraps, and
+tables scroll inside their own `overflow-x: auto` container. Add a test that the
+built CSS contains no fixed pixel width wider than 390px on those containers, or at
+least a manual checklist in the PR message. Verify with Chrome headless at
+`--window-size=390,2400` (see `README.md` for the preview command).
+
+### B. Fund III Portfolio page (`src/FundPortfolio.tsx`, `src/styles.css`)
+
+1. Headline figures currently render in light grey `IBM Plex Mono`, the same look as
+   "Not yet reported". Set reported values in the navy ink colour, in the body typeface
+   with `font-variant-numeric: tabular-nums`, weight 500, about 2rem. Keep grey only for
+   `missing` / `not_reported` states. Monospace stays only in the dark investor hero.
+2. Replace the single 10-tile grid with three labelled groups, each its own row:
+   "Portfolio" (homes, occupied homes, occupancy, TTM collection rate),
+   "Cost basis" (acquisition, renovation, total capitalization), "Trailing twelve
+   months" (rent collected, NOI, NOI yield). Four, three, three tiles; equal widths
+   within a row.
+3. State the dates once in the section header line, e.g. "Cost basis as of
+   2026-06-30 · TTM 2025-07-01 to 2026-06-30", and remove the per-tile "Snapshot as of"
+   captions and the per-tile info icons. Keep each tile's short caption only where it
+   adds meaning (acquisition cost: "including closing costs"; collection rate: "can
+   exceed 100% when arrears are collected").
+4. Move the metric definitions and the three footnote paragraphs into one Ant Design
+   `Collapse` panel titled "About these figures", closed by default. Leave one visible
+   line: "Source: portfolio snapshot, exported {date}." The sentence about the four
+   unsourced measures goes inside the panel.
+
+### C. Home and Portfolio pages (`src/PublicPages.tsx`, `src/site-data.ts`)
+
+5. Home page grid captions read "Obelisk Residential 01" through 08. Use the same
+   caption as the Portfolio page: street on the first line, "City, AL zip" on the
+   second, from the shared `portfolioProperties` list.
+6. Portfolio cards show "Current" on every card. Show a status label only when the
+   status is not "current" (e.g. Sold). Keep the layout height stable.
+7. The "Featured video" section is a grey "coming soon" box. Remove the section
+   entirely (and its nav anchor if any). Do not replace it with new copy.
+8. Crop all card photos to a fixed 4:3 frame with `object-fit: cover` so the grid is
+   uniform; no photo edits on disk.
+
+### D. Investor Home (`src/InvestorHome.tsx` or wherever the section lives)
+
+9. The "Obelisk business process" section embeds a raster image of the partner's
+   template with its own fonts and a duplicate "Section II" heading. Rebuild the six
+   steps as native cards in site typography (number, title, two-line description,
+   short tagline already present in the source content), using the existing step text
+   verbatim. Remove the raster image from the section (leave the file in place).
+10. In the capital account block, hide rows whose value is "Not provided" and collapse
+    the "Preferred return" and "Promote" panels to a single line "Preferred return and
+    promote figures are not yet provided" when all their rows are empty.
+
+### E. Not in scope
+
+- Leave the "Design preview" banner and the "illustrative" wording; the owner removes
+  them before an investor showing. Leave the investor relations email as is.
+- No photo re-shoots, no changes to the snapshot scripts or data schema.
+
+### Process for this task
+
+- Work on branch `feat/design-polish` (already created from `f213aa9` and pushed).
+- `npm run build`, `npm run test:fund-data`, `npm run check:worker` must pass.
+- Render `/`, `/portfolio`, `/fund-iii-portfolio`, `/investor-home` at 1440 and 390
+  wide with Chrome headless and describe what changed in each.
 
 ## Process
 
