@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { fullSize, responsive } from "./images";
+import { fullSize, previewImageRender, responsive } from "./images";
 import { Link, useParams } from "react-router-dom";
 import {
   Alert,
@@ -264,7 +264,10 @@ export function PropertyDetail() {
       <div className="property-summary">
         <Image
           {...responsive(property.image, "(max-width: 850px) 100vw, 34vw")}
-          preview={{ src: fullSize(property.image) }}
+          preview={{
+            src: fullSize(property.image),
+            imageRender: previewImageRender,
+          }}
           alt={`Photograph of ${property.name}`}
         />
         <div>

@@ -2,7 +2,7 @@ import { Alert, Button, Image, Input } from "antd";
 import { ArrowRightOutlined, LockOutlined } from "@ant-design/icons";
 import { Link, useSearchParams } from "react-router-dom";
 import { useGateStatus } from "./useGateStatus";
-import { fullSize, responsive } from "./images";
+import { fullSize, previewImageRender, responsive } from "./images";
 import { reference } from "./reference-content";
 import { portfolioProperties } from "./site-data";
 
@@ -89,7 +89,7 @@ export function HomePage() {
             View the full portfolio <ArrowRightOutlined />
           </Link>
         </div>
-        <Image.PreviewGroup>
+        <Image.PreviewGroup preview={{ imageRender: previewImageRender }}>
           <div className="home-gallery">
             {portfolioProperties.slice(0, 8).map((property) => (
               <figure key={property.id}>
@@ -154,7 +154,7 @@ export function PortfolioPage() {
           See property performance details <ArrowRightOutlined />
         </Button>
       </div>
-      <Image.PreviewGroup>
+      <Image.PreviewGroup preview={{ imageRender: previewImageRender }}>
         <div className="portfolio-gallery">
           {portfolioProperties.map((property, index) => (
             <figure key={property.id}>

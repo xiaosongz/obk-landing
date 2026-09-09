@@ -1,3 +1,5 @@
+import { cloneElement } from "react";
+import type { ReactElement } from "react";
 import manifest from "./image-manifest.json";
 
 // Responsive image attributes for a source path under /images. The manifest is
@@ -45,4 +47,15 @@ export function thumbnail(source: string, cssWidth: number): string {
   const target = cssWidth * 2;
   const fit = [...entry.widths].sort((a, b) => a - b).find((w) => w >= target);
   return variant(source, fit ?? Math.max(...entry.widths));
+}
+
+// Ant Design's Image forwards srcSet and sizes to the lightbox image, so the
+// browser would pick the small grid variant there too. Rendering the lightbox
+// image without them lets its full-size src win. Pass as
+// preview={{ imageRender: previewImageRender }} on Image or Image.PreviewGroup.
+export function previewImageRender(node: ReactElement): ReactElement {
+  return cloneElement(node as ReactElement<Record<string, unknown>>, {
+    srcSet: undefined,
+    sizes: undefined,
+  });
 }

@@ -19,6 +19,9 @@ const manifestPath = fileURLToPath(
 );
 const WIDTHS = [160, 480, 960, 1600];
 const QUALITY = 78;
+// Infographics carry small text; lossy encoding softens it. Encode them
+// losslessly (still about a third smaller than the PNG sources).
+const LOSSLESS = /(^|\/)(process-[a-z]+|business-process)\.png$/;
 const SOURCE_EXT = new Set([".jpg", ".jpeg", ".png"]);
 
 async function* walk(dir) {
@@ -63,7 +66,7 @@ for await (const source of walk(root)) {
     await sharp(source)
       .rotate()
       .resize({ width, withoutEnlargement: true })
-      .webp({ quality: QUALITY })
+      .webp(LOSSLESS.test(source) ? { lossless: true } : { quality: QUALITY })
       .toFile(target);
     generated++;
   }

@@ -1,5 +1,5 @@
 import { Button, Collapse, Descriptions, Image, Modal } from "antd";
-import { fullSize, responsive } from "./images";
+import { fullSize, previewImageRender, responsive } from "./images";
 import {
   ArrowRightOutlined,
   FileTextOutlined,
@@ -235,7 +235,10 @@ export default function InvestorHome() {
             <div className="process-illustration">
               <Image
                 {...responsive(step.image, "(max-width: 850px) 100vw, 44vw")}
-                preview={{ src: fullSize(step.image) }}
+                preview={{
+                  src: fullSize(step.image),
+                  imageRender: previewImageRender,
+                }}
                 alt={`Original Obelisk ${step.name.toLowerCase()} illustration`}
                 loading="lazy"
               />
