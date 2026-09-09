@@ -1,0 +1,59 @@
+:root{
+/* Brand — the three-color system. Everything else is a tint or shade of these. */
+--obk-charcoal:#202321;
+--obk-ivory:#F7F5EF;
+--obk-bronze:#A28258;
+
+/* Charcoal scale (ink) */
+--charcoal-900:#202321;
+--charcoal-700:#3A3E3B;
+--charcoal-500:#5F655F;   /* muted text — replaces the prototype's #626d75 */
+--charcoal-300:#9A9E97;
+--charcoal-200:#C9CBC3;
+
+/* Ivory scale (surfaces) */
+--ivory-50:#FCFBF8;       /* card / panel surface — replaces pure white */
+--ivory-100:#F7F5EF;      /* page ground */
+--ivory-200:#EFECE3;      /* footer, tinted panels, table header */
+--ivory-300:#E4E0D4;      /* hover on tinted panels */
+--rule:#DAD6CB;           /* 1px hairlines — replaces #dcded8 */
+
+/* Bronze scale (accent) */
+--bronze-700:#7E6340;     /* bronze on ivory for text needing AA contrast */
+--bronze-600:#8F7350;
+--bronze-500:#A28258;
+--bronze-300:#C8B393;
+--bronze-100:#EDE4D6;
+
+/* On-dark */
+--on-charcoal:#F7F5EF;
+--on-charcoal-muted:#C9CBC3;
+--on-charcoal-rule:rgba(247,245,239,.18);
+
+/* Semantic aliases */
+--surface-page:var(--ivory-100);
+--surface-card:var(--ivory-50);
+--surface-tint:var(--ivory-200);
+--surface-tint-hover:var(--ivory-300);
+--surface-inverse:var(--charcoal-900);
+--text-primary:var(--charcoal-900);
+--text-secondary:var(--charcoal-500);
+--text-accent:var(--bronze-700);
+--text-on-inverse:var(--on-charcoal);
+--text-on-inverse-muted:var(--on-charcoal-muted);
+--border-rule:var(--rule);
+--border-rule-inverse:var(--on-charcoal-rule);
+--accent:var(--bronze-500);
+--accent-strong:var(--bronze-700);
+--accent-soft:var(--bronze-100);
+--focus-ring:var(--bronze-500);
+--state-pending:var(--charcoal-300);
+--link:var(--charcoal-900);
+--link-hover:var(--bronze-700);
+--action-primary-bg:var(--charcoal-900);
+--action-primary-fg:var(--on-charcoal);
+--action-primary-hover:var(--charcoal-700);
+--action-secondary-border:var(--charcoal-900);
+--action-bronze-bg:var(--bronze-500);
+--action-bronze-hover:var(--bronze-600);
+}

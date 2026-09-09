@@ -1,0 +1,26 @@
+<!-- @dsCard group="Website" viewport="1440x900" name="Obelisk website & investor portal" subtitle="Home · Portfolio · Investor Login · Investor Home · Fund III Portfolio · Property Performance (click-through)" -->
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Obelisk · Website UI kit</title>
+<link rel="stylesheet" href="../../styles.css"><style>main{width:88%;max-width:1320px;margin:0 auto;padding-bottom:70px}a{color:var(--link)}</style>
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" crossorigin></script><script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" crossorigin></script><script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" crossorigin></script>
+<script src="../../_ds_bundle.js"></script><script src="data.js"></script>
+<script type="text/babel" src="PublicScreens.jsx"></script><script type="text/babel" src="InvestorScreens.jsx"></script><script type="text/babel" src="PropertyScreens.jsx"></script>
+</head><body><div id="root"></div>
+<script type="text/babel">
+const { SiteHeader, SiteFooter } = window.ObeliskDesignSystem_227ca9;
+function useRoute(){const read=()=>{const h=location.hash.replace(/^#/,"")||"/";const [path]=h.split("#");return path;};const [r,setR]=React.useState(read);React.useEffect(()=>{const f=()=>setR(read());addEventListener("hashchange",f);return()=>removeEventListener("hashchange",f);},[]);return r;}
+function App(){
+  const route=useRoute();const go=(k)=>{location.hash=k;window.scrollTo({top:0,behavior:"instant"});};
+  const active=route.startsWith("/property-performance")?"/property-performance":route;
+  let screen;
+  if(route==="/")screen=<HomeScreen go={go}/>;
+  else if(route==="/portfolio")screen=<PortfolioScreen go={go}/>;
+  else if(route==="/investor-login")screen=<LoginScreen go={go}/>;
+  else if(route==="/investor-home")screen=<InvestorHomeScreen go={go}/>;
+  else if(route==="/fund-iii-portfolio")screen=<FundScreen go={go}/>;
+  else if(route==="/property-performance")screen=<PropertyDirectoryScreen go={go}/>;
+  else if(route.startsWith("/property-performance/"))screen=<PropertyDetailScreen go={go} id={route.split("/")[2]}/>;
+  else screen=<div style={{padding:"60px 0"}}><h1>Page not found.</h1><a href="#/">Return to the homepage</a></div>;
+  return <><SiteHeader items={window.OBK.nav} active={active} onNavigate={go}/><main id="main" data-screen-label={active}>{screen}</main><SiteFooter onNavigate={go}/></>;
+}
+ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
+</script></body></html>

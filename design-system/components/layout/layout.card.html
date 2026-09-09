@@ -1,0 +1,14 @@
+<!-- @dsCard group="Components" viewport="700x700" name="Layout" subtitle="SiteHeader, PageTitle, SectionHeading, InvestorCallout, SiteFooter" -->
+<!doctype html><html><head><meta charset="utf-8"><link rel="stylesheet" href="../../styles.css"><style>body{margin:0;padding:20px;background:var(--surface-page)}.r{display:flex;gap:16px;align-items:flex-start;flex-wrap:wrap;margin-bottom:18px}</style>
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" crossorigin></script><script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" crossorigin></script><script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" crossorigin></script><script src="../../_ds_bundle.js"></script></head><body><div id="root"></div>
+<script type="text/babel">
+const { SiteHeader, PageTitle, SectionHeading, InvestorCallout, SiteFooter, TextLink } = window.ObeliskDesignSystem_227ca9;
+function App(){return <div style={{zoom:.62}}>
+<SiteHeader active="/portfolio" items={[{key:"/",label:"Home"},{key:"/portfolio",label:"Portfolio"},{key:"/investor-login",label:"Investor Login"},{key:"/investor-home",label:"Investor Home"},{key:"/fund-iii-portfolio",label:"Fund III Portfolio"},{key:"/property-performance",label:"Property Performance"}]}/>
+<div style={{width:"88%",margin:"0 auto"}}>
+<PageTitle eyebrow="The homes behind the platform" title="Our portfolio." intro="Our portfolio consists of affordable single-family rental homes located in established working-class neighborhoods."/>
+<SectionHeading eyebrow="Obelisk portfolio" title={<>Quality homes.<br/>Long-term stewardship.</>} action={<TextLink href="#">View the full portfolio</TextLink>}/>
+<InvestorCallout style={{marginTop:20}}/></div>
+<div style={{marginTop:30}}><SiteFooter/></div></div>}
+ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
+</script></body></html>

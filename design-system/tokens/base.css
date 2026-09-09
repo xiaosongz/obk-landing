@@ -1,0 +1,22 @@
+/* Minimal base — mirrors prototype/src/styles.css resets, retinted to the three-color system. */
+:root{font-family:var(--font-sans);color:var(--text-primary);background:var(--surface-page);font-synthesis:none;-webkit-font-smoothing:antialiased}
+*{box-sizing:border-box}
+body{margin:0;overflow-wrap:anywhere}
+a{color:var(--link);text-decoration:none}
+a:hover{color:var(--link-hover)}
+button,input{font:inherit}
+button{cursor:pointer}
+img{max-width:100%}
+figure{margin:0}
+h1,h2,h3,h4,p{margin-top:0}
+h1,h2,h3,h4{font-weight:var(--weight-medium)}
+h1{font-size:var(--text-h1);line-height:var(--leading-tight);letter-spacing:var(--tracking-display);margin-bottom:1.5rem}
+h2{font-size:var(--text-h2);line-height:var(--leading-heading);letter-spacing:var(--tracking-heading);margin-bottom:1.5rem}
+h3{font-size:var(--text-3xl);line-height:var(--leading-snug);letter-spacing:var(--tracking-subheading)}
+h4{font-size:var(--text-xl);line-height:var(--leading-normal)}
+p{line-height:var(--leading-body)}
+em{font-style:normal;color:var(--text-accent)}
+:focus-visible{outline:var(--focus-outline);outline-offset:var(--focus-offset)}
+.eyebrow{font-size:var(--text-xs);letter-spacing:var(--tracking-eyebrow);font-weight:var(--weight-medium);color:var(--text-secondary);line-height:1.5;margin-bottom:1.2rem;text-transform:uppercase}
+.mono-figure{font-family:var(--font-mono);font-weight:400;letter-spacing:var(--tracking-mono-figure)}
+.tabular{font-variant-numeric:tabular-nums}

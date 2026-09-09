@@ -19,13 +19,13 @@ Open [http://127.0.0.1:8766/](http://127.0.0.1:8766/). The server binds only to 
 
 | Page | Route | Included content |
 |---|---|---|
-| Home | `#/` | Affordable-housing platform introduction, Acquire/Improve/Operate strategy, eight canonically mapped property photographs, portfolio/investor links, original disclosure |
-| Portfolio | `#/portfolio` | Original portfolio introduction and all 37 showcase photographs, with a working image viewer |
-| Investor Login | `#/investor-login` | Investor entry page and an explicitly labeled demo entry; no credential collection |
-| Investor Home | `#/investor-home` | Investor-relations contact, both fund links, provided subscription/capital/preferred-return/promote rows, legal-document placeholder, six native process overview cards and six illustrated process sections |
-| Fund III Portfolio | `#/fund-iii-portfolio` | Sourced fund snapshot and TTM window, Buy/Rehab/Rent/Refinance/Repeat stages, searchable acquisition directory, stabilized and stabilizing reporting layouts, manager-note areas |
-| Property Performance | `#/property-performance` | Source current/sold property gallery and routes to property details |
-| Property detail | `#/property-performance/:id` | Snapshot status/rent, asset and lease report, TTM and since-acquired financials, calculation rules, and OpenStreetMap from recorded coordinates |
+| Home | `/` | Affordable-housing platform introduction, Acquire/Improve/Operate strategy, eight canonically mapped property photographs, portfolio/investor links, original disclosure |
+| Portfolio | `/portfolio` | Original portfolio introduction and all 37 showcase photographs, with a working image viewer |
+| Investor Login | `/investor-login` | Public. Shared-password form posting to the Worker gate (`worker/gate.ts`); no per-investor credentials yet |
+| Investor Home | `/investor-home` | Investor-relations contact, both fund links, provided subscription/capital/preferred-return/promote rows, legal-document placeholder, six native process overview cards and six illustrated process sections |
+| Fund III Portfolio | `/fund-iii-portfolio` | Sourced fund snapshot and TTM window, Buy/Rehab/Rent/Refinance/Repeat stages, searchable acquisition directory, stabilized and stabilizing reporting layouts, manager-note areas |
+| Property Performance | `/property-performance` | Source current/sold property gallery and routes to property details |
+| Property detail | `/property-performance/:id` | Snapshot status/rent, asset and lease report, TTM and since-acquired financials, calculation rules, and OpenStreetMap from recorded coordinates |
 
 The full business-process copy is retained in expandable reading sections. Illustrations can be opened at full size. The first property’s detailed-page photograph takes precedence over the directory’s generic placeholder photograph.
 
@@ -36,6 +36,18 @@ The full business-process copy is retained in expandable reading sections. Illus
 - The investor account uses a fictional identity and illustrative capital amounts. Preferred-return/promote values remain unfilled. Property reports use the v3 snapshot; missing fields display “Not provided.” No personal investor record, tenant record, legal agreement, or screenshot financial table is imported.
 - The source login page was blank. The unsupplied featured-video slot is removed. The subscription-agreement link remains explicitly labeled as unsupplied.
 - Production must use authenticated server-side investor/fund authorization and the website’s own snapshot database, populated from approved cockpit financial read models by a GP-side job. Source narrative definitions need reconciliation with those models before displaying calculated results.
+
+## Access
+
+Home, Portfolio, and Investor Login are public. Investor Home, Fund III Portfolio, Property Performance, and `/lp-data/*` require the gate cookie; the Worker redirects anonymous page loads to `/investor-login?next=...` and answers data requests with 401. Local `vite` review has no gate and reports every viewer as signed in.
+
+## Images
+
+Source photographs and illustrations stay in `public/images/`. `npm run images` (run automatically before `dev` and `build`) uses `sharp` to write WebP variants at 160, 480, 960, and 1600 pixels beside each source and records them in `src/image-manifest.json`. Components request them through `src/images.ts` (`responsive`, `fullSize`, `thumbnail`) so the browser downloads only the size it displays. Variants and the manifest are generated, not committed.
+
+## Design system
+
+Brand tokens live in `design-system/` (start with `design-system/SKILL.md` and `readme.md`). `src/styles.css` carries the same custom properties in its `:root` block and `src/main.tsx` maps them onto the Ant Design theme; change colors, type, spacing, and radii there rather than in individual rules. Three colors only: Charcoal `#202321`, Warm Ivory `#F7F5EF`, Aged Bronze `#A28258`.
 
 ## Maintenance
 

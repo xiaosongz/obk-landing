@@ -7,3 +7,12 @@ node_modules/
 /takeout*.zip
 /takeout*/
 /private-archives/
+
+# Design-system photos and illustrations duplicate prototype/public/images; keep tokens, components, and docs only.
+/design-system/assets/photos/
+/design-system/assets/illustrations/
+/design-system/.thumbnail
+
+# Generated responsive image variants and their manifest (npm run images)
+/prototype/public/images/**/*.w[0-9]*.webp
+/prototype/src/image-manifest.json

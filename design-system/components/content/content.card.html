@@ -1,0 +1,18 @@
+<!-- @dsCard group="Components" viewport="700x640" name="Content" subtitle="PhotoCard, ProcessCard, PortalLink, ManagerNote, PreviewNotice, SourceNote, Collapse, StageJumps, Alert, Modal" -->
+<!doctype html><html><head><meta charset="utf-8"><link rel="stylesheet" href="../../styles.css"><style>body{margin:0;padding:20px;background:var(--surface-page)}.r{display:flex;gap:16px;align-items:flex-start;flex-wrap:wrap;margin-bottom:18px}</style>
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" crossorigin></script><script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" crossorigin></script><script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" crossorigin></script><script src="../../_ds_bundle.js"></script></head><body><div id="root"></div>
+<script type="text/babel">
+const { PhotoCard, ProcessCard, PortalLink, ManagerNote, PreviewNotice, SourceNote, Collapse, StageJumps, Alert, Modal, Button } = window.ObeliskDesignSystem_227ca9;
+function App(){const [o,setO]=React.useState(false);return <>
+<div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1.2fr",gap:16}}>
+<PhotoCard src="../../assets/photos/9645-9th-ave-n.jpg" address="9645 9th Ave N" location="Birmingham, AL 35217"/>
+<PhotoCard framed src="../../assets/photos/213-22nd-st-sw.jpg" address="213 22nd St SW" location="Birmingham, AL 35211" status="Rented" rent="$1,150" href="#"/>
+<div style={{display:"flex",flexDirection:"column",gap:12}}><ProcessCard number={1} title="Acquisition" description="Identify and acquire undervalued, affordable single-family homes in strong rental markets." tagline="Buy Right." href="#"/><PortalLink eyebrow="Fund-level reporting" title="Fund III Portfolio" href="#"/></div></div>
+<StageJumps stages={["Buy","Rehab","Rent & stabilization","Refinance","Repeat & scale"]}/>
+<div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:16,marginTop:16}}>
+<div><ManagerNote style={{marginTop:0}} title="Financing update">The source template notes that the Manager is exploring refinancing options and seeking quotes from lenders.</ManagerNote><Alert title="Fund III report not yet supplied" description="Status and financial values appear once the database export is available."/></div>
+<div><PreviewNotice style={{margin:"0 0 12px"}}>Sign-in is not connected yet. Explore a demo investor account; no credentials are required.</PreviewNotice><Collapse label="About these figures">Zero is a reported value; “Missing” means the source lacks a value; “Not yet reported” means no approved report has supplied it.</Collapse><Collapse ghost label="Read the full leasing approach">Leasing affordable housing requires more than filling vacancies.</Collapse><SourceNote>Source: portfolio snapshot, exported 2026-07-01.</SourceNote><Button style={{marginTop:12}} onClick={()=>setO(true)}>Open modal</Button></div></div>
+<Modal open={o} title="Subscription agreement" onClose={()=>setO(false)}>The source template includes a subscription-agreement link. No agreement has been supplied for this demo account.</Modal>
+</>}
+ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
+</script></body></html>

@@ -1,0 +1,30 @@
+:root{
+/* Radii — the brand is square. Panels, cards, photos: 0. Controls only: 2px. */
+--radius-none:0;
+--radius-control:2px;
+
+/* Borders — hairlines, never shadows */
+--border-hair:1px solid var(--rule);
+--border-accent:2px solid var(--bronze-500);
+
+/* Shadows — none on cards; a single soft lift for floating layers (menu, modal) */
+--shadow-none:none;
+--shadow-float:0 12px 32px rgba(32,35,33,.14);
+
+/* Motion — short, linear-ish, no bounce */
+--duration-fast:150ms; /* @kind other */
+--duration-base:200ms; /* @kind other */
+--duration-photo:250ms; /* @kind other */
+--ease-standard:ease; /* @kind other */
+
+/* Photo hover */
+--photo-hover-scale:1.03; /* @kind other */
+
+/* Protection gradient over photography (login panel) */
+--gradient-protect:linear-gradient(transparent,rgba(32,35,33,.92)); /* @kind other */
+--gradient-protect-soft:linear-gradient(transparent,rgba(32,35,33,.6)); /* @kind other */
+
+/* Focus */
+--focus-outline:2px solid var(--bronze-500);
+--focus-offset:4px;
+}

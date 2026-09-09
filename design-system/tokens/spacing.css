@@ -1,0 +1,35 @@
+:root{
+--space-1:0.25rem;
+--space-2:0.5rem;
+--space-3:0.75rem;
+--space-4:1rem;
+--space-5:1.25rem;
+--space-6:1.5rem;
+--space-7:1.75rem;
+--space-8:2rem;
+--space-10:2.5rem;
+--space-12:3rem;
+--space-14:3.5rem;
+--space-16:4rem;
+--space-20:5rem;
+
+/* Layout */
+--section-gap:80px;
+--section-gap-mobile:50px;
+--header-height:104px;
+--container-max:1320px;
+--container-width:88%;
+--header-max:1440px;
+--header-width:92%;
+--page-title-pad:60px 0 40px;
+--panel-pad:1.75rem;
+--panel-pad-lg:2.5rem;
+--callout-pad:48px;
+
+/* Grids */
+--gallery-gap:1.5rem;
+--portfolio-gap:2rem;
+--photo-ratio:4 / 3; /* @kind other */
+--thumb-w:64px;
+--thumb-h:48px;
+}
