@@ -15,6 +15,7 @@ const ivory100 = "#F7F5EF";
 const ivory200 = "#EFECE3";
 const rule = "#DAD6CB";
 const bronze700 = "#7E6340";
+const bronze300 = "#C8B393";
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
@@ -55,8 +56,11 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
             rowHoverBg: ivory200,
           },
           Menu: {
-            horizontalItemSelectedColor: charcoal,
+            // The header is charcoal; the stylesheet sets the ivory item colors.
+            horizontalItemSelectedColor: bronze300,
+            horizontalItemHoverColor: bronze300,
             itemBg: "transparent",
+            colorSplit: "transparent",
           },
           Button: {
             fontWeight: 500,

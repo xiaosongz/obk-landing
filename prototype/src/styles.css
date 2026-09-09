@@ -276,8 +276,8 @@ em {
   gap: 1rem;
   justify-content: center;
   align-items: center;
-  background: var(--surface-tint);
-  color: var(--text-secondary);
+  background: var(--charcoal-700);
+  color: var(--text-on-inverse-muted);
   font-size: 0.75rem;
   min-height: 32px;
   padding: 0.35rem 1rem;
@@ -285,16 +285,19 @@ em {
 .preview-bar > span:first-child {
   font-weight: 600;
   letter-spacing: 0.1em;
+  color: var(--bronze-300);
 }
+/* Charcoal banner (owner decision, 2026-09-09): a full-width dark band whose
+   content column matches the old 92% / 1440px header. */
 .site-header {
-  max-width: 1440px;
-  width: 92%;
-  margin: auto;
   display: flex;
   align-items: center;
   gap: 2rem;
   min-height: 104px;
-  border-bottom: 1px solid var(--rule);
+  padding-inline: max(4%, calc((100% - 1440px) / 2));
+  background: var(--surface-inverse);
+  color: var(--text-on-inverse);
+  border-bottom: 1px solid var(--border-rule-inverse);
 }
 .brand {
   font-size: 1.75rem;
@@ -302,7 +305,7 @@ em {
   letter-spacing: 0.14em;
   line-height: 1;
   flex-shrink: 0;
-  color: var(--navy);
+  color: inherit;
 }
 .brand small {
   display: block;
@@ -310,6 +313,33 @@ em {
   font-weight: 400;
   letter-spacing: 0.16em;
   margin-top: 0.7rem;
+  color: var(--bronze-300);
+}
+.site-footer .brand {
+  color: var(--text-primary);
+}
+.site-footer .brand small {
+  color: var(--text-secondary);
+}
+/* Ivory labels, gold for the active tab and hover; bronze rule under the active tab only. */
+.site-header .ant-menu-item,
+.site-header .ant-menu-item a {
+  color: var(--text-on-inverse);
+  font-weight: 500;
+}
+.site-header .ant-menu-item:hover,
+.site-header .ant-menu-item-selected,
+.site-header .ant-menu-item-selected a {
+  color: var(--bronze-300) !important;
+}
+.site-header .ant-menu-horizontal > .ant-menu-item-selected::after,
+.site-header .ant-menu-horizontal > .ant-menu-item:hover::after {
+  border-bottom-color: var(--accent) !important;
+}
+.site-header .mobile-menu-toggle {
+  background: transparent;
+  color: var(--text-on-inverse);
+  border-color: var(--border-rule-inverse);
 }
 .site-header nav {
   flex: 1;
@@ -320,7 +350,7 @@ em {
   border-bottom: 0;
   justify-content: flex-end;
   line-height: 103px;
-  font-size: 0.875rem;
+  font-size: 1rem;
 }
 .site-header .ant-menu-item {
   padding-inline: 1rem;
@@ -1157,7 +1187,6 @@ figure > figcaption span:first-child {
 }
 @media (max-width: 1150px) {
   .site-header {
-    width: 92%;
     gap: 1rem;
   }
   .site-header .ant-menu-item {
@@ -1306,15 +1335,17 @@ figure > figcaption span:first-child {
     display: flex;
     flex: 0 0 100%;
     flex-direction: column;
-    border-top: 1px solid var(--rule);
+    border-top: 1px solid var(--border-rule-inverse);
   }
   .mobile-navigation a {
     padding: 0.8rem;
-    color: var(--navy);
+    color: var(--text-on-inverse);
+    font-size: 1rem;
+    font-weight: 500;
   }
   .mobile-navigation a[aria-current="page"] {
-    background: var(--surface-tint);
-    font-weight: 500;
+    background: var(--charcoal-700);
+    color: var(--bronze-300);
   }
   main {
     width: 90%;
