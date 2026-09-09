@@ -1,4 +1,5 @@
 import { Button, Collapse, Descriptions, Image, Modal } from "antd";
+import { fullSize, responsive } from "./images";
 import {
   ArrowRightOutlined,
   FileTextOutlined,
@@ -216,7 +217,7 @@ export default function InvestorHome() {
             <a
               className="process-card"
               key={step.id}
-              href={`#/investor-home#process-${step.id}`}
+              href={`/investor-home#process-${step.id}`}
             >
               <span className="eyebrow">{step.id.padStart(2, "0")}</span>
               <h3>{step.name}</h3>
@@ -233,7 +234,8 @@ export default function InvestorHome() {
           >
             <div className="process-illustration">
               <Image
-                src={step.image}
+                {...responsive(step.image, "(max-width: 850px) 100vw, 44vw")}
+                preview={{ src: fullSize(step.image) }}
                 alt={`Original Obelisk ${step.name.toLowerCase()} illustration`}
                 loading="lazy"
               />

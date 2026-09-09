@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { thumbnail } from "./images";
 import { Alert, Button, Input, Table, Collapse, Tag } from "antd";
 import type { TableColumnsType } from "antd";
 import {
@@ -78,7 +79,7 @@ export default function FundPortfolio() {
       render: (_, p) => (
         <div className="table-property">
           {p.photo ? (
-            <img src={p.photo.image} alt="" />
+            <img src={thumbnail(p.photo.image, 64)} alt="" />
           ) : (
             <span
               className="photo-unmatched"
@@ -283,7 +284,7 @@ export default function FundPortfolio() {
             "Refinance",
             "Repeat & scale",
           ].map((label, i) => (
-            <a href={`#/fund-iii-portfolio#stage-${i + 1}`} key={label}>
+            <a href={`/fund-iii-portfolio#stage-${i + 1}`} key={label}>
               <span>0{i + 1}</span>
               {label}
               <ArrowRightOutlined />
@@ -400,7 +401,7 @@ export default function FundPortfolio() {
             "Scaling update",
             "The source template notes that scaling work will be initiated after refinancing is executed.",
           )}
-          <Button href="#/investor-home#process-6">
+          <Button href="/investor-home#process-6">
             Read the scaling approach <ArrowRightOutlined />
           </Button>
         </article>

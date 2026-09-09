@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { fullSize, responsive } from "./images";
 import { Link, useParams } from "react-router-dom";
 import {
   Alert,
@@ -45,7 +46,7 @@ function PropertyCards({ properties }: { properties: PortfolioProperty[] }) {
             className="property-card-photo"
           >
             <img
-              src={p.image}
+              {...responsive(p.image, "(max-width: 850px) 50vw, 29vw")}
               alt={p.addressProvided ? `Photograph of ${p.name}` : p.name}
               loading="lazy"
             />
@@ -189,7 +190,7 @@ export function PropertyDetail() {
     return (
       <div className="page-title">
         <h1>Property not found.</h1>
-        <Button href="#/property-performance">Return to properties</Button>
+        <Button href="/property-performance">Return to properties</Button>
       </div>
     );
   const asset = data?.properties.find(
@@ -244,7 +245,7 @@ export function PropertyDetail() {
             {property.location ?? "Location not provided"}
           </p>
         </div>
-        <Button icon={<ArrowLeftOutlined />} href="#/property-performance">
+        <Button icon={<ArrowLeftOutlined />} href="/property-performance">
           All properties
         </Button>
       </div>
@@ -261,7 +262,11 @@ export function PropertyDetail() {
         </p>
       )}
       <div className="property-summary">
-        <Image src={property.image} alt={`Photograph of ${property.name}`} />
+        <Image
+          {...responsive(property.image, "(max-width: 850px) 100vw, 34vw")}
+          preview={{ src: fullSize(property.image) }}
+          alt={`Photograph of ${property.name}`}
+        />
         <div>
           <p className="eyebrow">PERFORMANCE AT A GLANCE</p>
           <h2>The asset, in perspective.</h2>
@@ -313,7 +318,7 @@ export function PropertyDetail() {
         ].map((name, i) => (
           <a
             key={name}
-            href={`#/property-performance/${property.id}#detail-${i + 1}`}
+            href={`/property-performance/${property.id}#detail-${i + 1}`}
           >
             {String(i + 1).padStart(2, "0")} / {name}
           </a>
