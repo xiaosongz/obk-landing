@@ -1,6 +1,14 @@
-// Password gate in front of the static site. Runs before every asset request
-// (run_worker_first). The password and the cookie-signing key are Worker
-// secrets; nothing sensitive is in this file or the repository.
+// Password gate in front of the investor section of the static site. Runs
+// before every asset request (run_worker_first).
+//
+// Public: the home page, the portfolio, the investor login page, and the
+// static assets they need. Gated: the investor pages and the fund snapshot
+// data under /lp-data. The snapshot file is the only sensitive payload; the
+// page routes are gated as well so the investor section is not browsable
+// without signing in.
+//
+// The password and the cookie-signing key are Worker secrets; nothing
+// sensitive is in this file or the repository.
 //
 //   wrangler secret put SITE_PASSWORD   # the shared entry password
 //   wrangler secret put GATE_SECRET     # random string used to sign the cookie
@@ -14,6 +22,16 @@ interface Env {
 const COOKIE = "obk_gate";
 const COOKIE_DAYS = 30;
 const GATE_PATH = "/__gate";
+const LOGIN_PAGE = "/investor-login";
+const DEFAULT_NEXT = "/investor-home";
+
+// Route prefixes that require the gate cookie. Everything else is public.
+const GATED_PREFIXES = [
+  "/investor-home",
+  "/fund-iii-portfolio",
+  "/property-performance",
+  "/lp-data/",
+];
 
 const encoder = new TextEncoder();
 
@@ -56,89 +74,109 @@ async function expectedToken(env: Env): Promise<string> {
   return sign(env.GATE_SECRET, `gate-v1:${env.SITE_PASSWORD}`);
 }
 
-function page(body: string, status = 200, extra: HeadersInit = {}): Response {
-  return new Response(body, {
-    status,
-    headers: {
-      "Content-Type": "text/html; charset=utf-8",
-      "Cache-Control": "no-store",
-      "X-Robots-Tag": "noindex, nofollow",
-      "Referrer-Policy": "no-referrer",
-      ...extra,
-    },
+async function isAuthenticated(request: Request, env: Env): Promise<boolean> {
+  const token = readCookie(request, COOKIE);
+  return !!token && timingSafeEqual(token, await expectedToken(env));
+}
+
+export function isGated(pathname: string): boolean {
+  return GATED_PREFIXES.some(
+    (prefix) =>
+      pathname === prefix ||
+      pathname === `${prefix}/` ||
+      pathname.startsWith(prefix.endsWith("/") ? prefix : `${prefix}/`),
+  );
+}
+
+// Only same-origin, gated destinations are honoured as a post-login target.
+export function safeNext(value: string | null): string {
+  if (!value || !value.startsWith("/") || value.startsWith("//")) {
+    return DEFAULT_NEXT;
+  }
+  if (/[\r\n\\]/.test(value)) return DEFAULT_NEXT;
+  const pathname = value.split(/[?#]/)[0];
+  return isGated(pathname) && !pathname.startsWith("/lp-data/")
+    ? value
+    : DEFAULT_NEXT;
+}
+
+function redirect(location: string, extra: HeadersInit = {}): Response {
+  return new Response(null, {
+    status: 303,
+    headers: { Location: location, "Cache-Control": "no-store", ...extra },
   });
 }
 
-function loginPage(error = ""): string {
-  return `<!doctype html>
-<html lang="en"><head><meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="robots" content="noindex">
-<title>Obelisk · Preview access</title>
-<style>
-  body{margin:0;min-height:100vh;display:grid;place-items:center;background:#faf9f6;color:#16181d;font:16px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif}
-  form{background:#fff;border:1px solid #dcdedc;padding:2.5rem;width:min(92vw,380px);border-radius:4px}
-  h1{font-size:1.1rem;letter-spacing:.08em;text-transform:uppercase;margin:0 0 .25rem;color:#1e3a5f}
-  p{margin:0 0 1.5rem;color:#656b75;font-size:.95rem}
-  label{display:block;font-size:.85rem;margin-bottom:.4rem}
-  input{width:100%;box-sizing:border-box;height:44px;padding:0 .75rem;border:1px solid #dcdedc;border-radius:4px;font-size:1rem}
-  button{margin-top:1rem;width:100%;height:44px;border:0;border-radius:4px;background:#1e3a5f;color:#fff;font-size:1rem;font-weight:500;cursor:pointer}
-  .err{color:#a33;font-size:.9rem;margin:.75rem 0 0}
-</style></head><body>
-<form method="post" action="${GATE_PATH}">
-  <h1>Obelisk Fund Management</h1>
-  <p>This preview site is private. Enter the access password to continue.</p>
-  <label for="pw">Access password</label>
-  <input id="pw" name="password" type="password" autocomplete="current-password" autofocus required>
-  ${error ? `<p class="err">${error}</p>` : ""}
-  <button type="submit">Enter</button>
-</form></body></html>`;
+function json(body: unknown, status = 200): Response {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: {
+      "Content-Type": "application/json; charset=utf-8",
+      "Cache-Control": "no-store",
+      "X-Content-Type-Options": "nosniff",
+    },
+  });
 }
 
 function setCookie(token: string): string {
   return `${COOKIE}=${token}; Path=/; Max-Age=${COOKIE_DAYS * 86400}; HttpOnly; Secure; SameSite=Lax`;
 }
 
+const clearCookie = `${COOKIE}=; Path=/; Max-Age=0; HttpOnly; Secure; SameSite=Lax`;
+
+function loginRedirect(next: string, error = false): Response {
+  const params = new URLSearchParams();
+  if (error) params.set("error", "1");
+  params.set("next", next);
+  return redirect(`${LOGIN_PAGE}?${params}`);
+}
+
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     const url = new URL(request.url);
 
+    if (url.pathname === `${GATE_PATH}/status`) {
+      return json({ authenticated: await isAuthenticated(request, env) });
+    }
+
     if (url.pathname === `${GATE_PATH}/logout`) {
-      return new Response(null, {
-        status: 303,
-        headers: {
-          Location: "/",
-          "Set-Cookie": `${COOKIE}=; Path=/; Max-Age=0; HttpOnly; Secure; SameSite=Lax`,
-        },
-      });
+      return redirect("/", { "Set-Cookie": clearCookie });
     }
 
     if (url.pathname === GATE_PATH) {
-      if (request.method !== "POST") return page(loginPage(), 200);
+      if (request.method !== "POST") return redirect(LOGIN_PAGE);
+      // The form is same-origin; reject cross-site posts outright.
+      const origin = request.headers.get("Origin");
+      if (origin && origin !== url.origin)
+        return json({ error: "Forbidden" }, 403);
       const form = await request.formData().catch(() => null);
       const supplied = String(form?.get("password") ?? "");
+      const next = safeNext(
+        typeof form?.get("next") === "string"
+          ? (form.get("next") as string)
+          : null,
+      );
       if (!supplied || !timingSafeEqual(supplied, env.SITE_PASSWORD)) {
-        return page(loginPage("Incorrect password."), 401);
+        return loginRedirect(next, true);
       }
-      return new Response(null, {
-        status: 303,
-        headers: {
-          Location: "/",
-          "Set-Cookie": setCookie(await expectedToken(env)),
-          "Cache-Control": "no-store",
-        },
+      return redirect(next, {
+        "Set-Cookie": setCookie(await expectedToken(env)),
       });
     }
 
-    const token = readCookie(request, COOKIE);
-    if (!token || !timingSafeEqual(token, await expectedToken(env))) {
-      return page(loginPage(), 401);
+    const gated = isGated(url.pathname);
+    if (gated && !(await isAuthenticated(request, env))) {
+      if (url.pathname.startsWith("/lp-data/")) {
+        return json({ error: "Sign in required" }, 401);
+      }
+      return loginRedirect(url.pathname + url.search);
     }
 
     const response = await env.ASSETS.fetch(request);
     const headers = new Headers(response.headers);
+    // Preview site: keep search engines out of every page for now.
     headers.set("X-Robots-Tag", "noindex, nofollow");
-    headers.set("Cache-Control", "private, no-store");
+    if (gated) headers.set("Cache-Control", "private, no-store");
     return new Response(response.body, { status: response.status, headers });
   },
 } satisfies ExportedHandler<Env>;

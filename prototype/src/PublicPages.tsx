@@ -1,6 +1,8 @@
-import { Button, Image } from "antd";
+import { Alert, Button, Image, Input } from "antd";
 import { ArrowRightOutlined, LockOutlined } from "@ant-design/icons";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
+import { useGateStatus } from "./useGateStatus";
+import { fullSize, responsive } from "./images";
 import { reference } from "./reference-content";
 import { portfolioProperties } from "./site-data";
 
@@ -23,7 +25,7 @@ export function HomePage() {
             Long-term stewardship.
           </p>
           <div className="actions">
-            <Button type="primary" size="large" href="#/portfolio">
+            <Button type="primary" size="large" href="/portfolio">
               Explore our portfolio <ArrowRightOutlined />
             </Button>
             <Link className="text-link" to="/investor-login">
@@ -33,7 +35,10 @@ export function HomePage() {
         </div>
         <figure className="hero-photo">
           <img
-            src={reference.photos.home[1]}
+            {...responsive(
+              reference.photos.home[1],
+              "(max-width: 850px) 100vw, 45vw",
+            )}
             alt="Single-family home featured in the Obelisk portfolio"
             fetchPriority="high"
           />
@@ -89,7 +94,11 @@ export function HomePage() {
             {portfolioProperties.slice(0, 8).map((property) => (
               <figure key={property.id}>
                 <Image
-                  src={property.image}
+                  {...responsive(
+                    property.image,
+                    "(max-width: 1100px) 50vw, 22vw",
+                  )}
+                  preview={{ src: fullSize(property.image) }}
                   alt={
                     property.addressProvided
                       ? `Property at ${property.name}, ${property.location}`
@@ -117,7 +126,7 @@ export function HomePage() {
             reporting.
           </p>
         </div>
-        <Button size="large" href="#/investor-login">
+        <Button size="large" href="/investor-login">
           Investor portal <ArrowRightOutlined />
         </Button>
       </section>
@@ -141,7 +150,7 @@ export function PortfolioPage() {
       </div>
       <div className="gallery-toolbar">
         <p>{portfolioProperties.length} homes in the Fund III portfolio</p>
-        <Button href="#/investor-login">
+        <Button href="/investor-login">
           See property performance details <ArrowRightOutlined />
         </Button>
       </div>
@@ -150,7 +159,8 @@ export function PortfolioPage() {
           {portfolioProperties.map((property, index) => (
             <figure key={property.id}>
               <Image
-                src={property.image}
+                {...responsive(property.image, "(max-width: 850px) 50vw, 29vw")}
+                preview={{ src: fullSize(property.image) }}
                 alt={
                   property.addressProvided
                     ? `Property at ${property.name}, ${property.location}`
@@ -181,11 +191,18 @@ export function PortfolioPage() {
 }
 
 export function InvestorLoginPage() {
+  const [params] = useSearchParams();
+  const gate = useGateStatus();
+  const next = params.get("next") ?? "/investor-home";
+  const failed = params.get("error") === "1";
   return (
     <section className="login-page">
       <div className="login-photo">
         <img
-          src={reference.photos.home[5]}
+          {...responsive(
+            reference.photos.home[5],
+            "(max-width: 850px) 100vw, 50vw",
+          )}
           alt="Home from the Obelisk portfolio"
         />
         <div>
@@ -205,16 +222,34 @@ export function InvestorLoginPage() {
           Your investment at a glance, the fund’s progress, and the properties
           behind it.
         </p>
-        <div className="preview-notice">
-          <strong>Design preview</strong>
-          <p>
-            Sign-in is not connected yet. Explore a demo investor account; no
-            credentials are required.
-          </p>
-        </div>
-        <Button type="primary" size="large" block href="#/investor-home">
-          Explore investor home <ArrowRightOutlined />
-        </Button>
+        {gate === "in" ? (
+          <Button type="primary" size="large" block href={next}>
+            Continue to investor home <ArrowRightOutlined />
+          </Button>
+        ) : (
+          <form className="login-form" method="post" action="/__gate">
+            <input type="hidden" name="next" value={next} />
+            <label htmlFor="access-password">Access password</label>
+            <Input.Password
+              id="access-password"
+              name="password"
+              size="large"
+              autoComplete="current-password"
+              autoFocus
+              required
+            />
+            {failed ? (
+              <Alert
+                type="error"
+                showIcon={false}
+                message="That password was not recognized."
+              />
+            ) : null}
+            <Button type="primary" size="large" block htmlType="submit">
+              Sign in <ArrowRightOutlined />
+            </Button>
+          </form>
+        )}
         <p className="login-contact">
           Need assistance?
           <br />

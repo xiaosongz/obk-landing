@@ -15,14 +15,29 @@ import FundPortfolio from "./FundPortfolio";
 import { PropertyDetail, PropertyDirectory } from "./PropertyPages";
 import { navigation } from "./site-data";
 import { reference } from "./reference-content";
+import { isGatedPath, useGateStatus } from "./useGateStatus";
 
 export default function App() {
   const [menuOpen, setMenuOpen] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
+  const gate = useGateStatus();
+  const signedIn = gate === "in";
+  // Signed-out viewers see the public pages plus the login entry; signed-in
+  // viewers see the investor pages instead of the login entry.
+  const visibleNavigation = navigation.filter((page) =>
+    signedIn ? page.key !== "/investor-login" : !isGatedPath(page.key),
+  );
   const active = location.pathname.startsWith("/property-performance")
     ? "/property-performance"
     : location.pathname;
+  useEffect(() => {
+    // The Worker redirects full-page loads; this covers in-app navigation.
+    if (gate === "out" && isGatedPath(location.pathname)) {
+      const next = encodeURIComponent(location.pathname + location.search);
+      window.location.assign(`/investor-login?next=${next}`);
+    }
+  }, [gate, location.pathname, location.search]);
   useEffect(() => {
     setMenuOpen(false);
     document.title = `${navigation.find((page) => page.key === active)?.label ?? "Obelisk"} · Obelisk Fund Management`;
@@ -70,7 +85,7 @@ export default function App() {
           <Menu
             mode="horizontal"
             selectedKeys={[active]}
-            items={navigation}
+            items={visibleNavigation}
             onClick={({ key }) => navigate(key)}
           />
         </nav>
@@ -88,7 +103,7 @@ export default function App() {
             }
           }}
         >
-          {navigation.map((page) => (
+          {visibleNavigation.map((page) => (
             <Link
               key={page.key}
               to={page.key}
@@ -118,7 +133,7 @@ export default function App() {
             element={
               <div className="page-title">
                 <h1>Page not found.</h1>
-                <Button href="#/">Return to the homepage</Button>
+                <Button href="/">Return to the homepage</Button>
               </div>
             }
           />
@@ -130,9 +145,15 @@ export default function App() {
             OBELISK<small>FUND MANAGEMENT</small>
           </Link>
           <p>A full-service affordable housing platform.</p>
-          <Link className="text-link" to="/investor-login">
-            Investor portal <ArrowRightOutlined />
-          </Link>
+          {signedIn ? (
+            <a className="text-link" href="/__gate/logout">
+              Sign out <ArrowRightOutlined />
+            </a>
+          ) : (
+            <Link className="text-link" to="/investor-login">
+              Investor portal <ArrowRightOutlined />
+            </Link>
+          )}
         </div>
         <div className="footer-disclosure">
           <p>© 2026 Obelisk Fund Manager LLC. All rights reserved.</p>

@@ -12,7 +12,15 @@ function privateFundReport(): Plugin {
     response,
     next,
   ) => {
-    if (request.url?.split("?")[0] !== "/lp-data/fund-iii.json") return next();
+    const pathname = request.url?.split("?")[0];
+    // Local review has no Worker gate; report the viewer as signed in.
+    if (pathname === "/__gate/status") {
+      response.setHeader("Content-Type", "application/json");
+      response.setHeader("Cache-Control", "no-store");
+      response.end('{"authenticated":true}');
+      return;
+    }
+    if (pathname !== "/lp-data/fund-iii.json") return next();
     response.setHeader("Content-Type", "application/json");
     response.setHeader("Cache-Control", "no-store");
     response.setHeader("X-Content-Type-Options", "nosniff");
